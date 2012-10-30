@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RunningTotal</title>
+
+    <script type="text/javascript" src="https://trial.rallydev.com/apps/2.0p5/sdk-debug.js"></script>
+
+    <script type="text/javascript">
+        Rally.onReady(function() {
+            Rally.loadScripts([
+                "App.js"
+            ], function() {
+                Rally.launchApp('CustomApp', {
+                    name: 'RunningTotal'
+                })
+            }, true);
+        });
+    </script>
+
+<link rel="stylesheet" type="text/css" href="app.css">
+</head>
+<body></body>
+</html>
