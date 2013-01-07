@@ -16,12 +16,12 @@ var renderFieldName = function(value) {
     
 Ext.define('CustomApp', {
     extend: 'Rally.app.App',
-    field_to_sum: 'FeaturePointEstimate',
+    field_to_sum: 'FeatureEstimate',
     columns: [
         { text: 'ID', dataIndex: 'FormattedID' },
         { text: 'Name', dataIndex: 'Name', flex: 1 },
         { text: 'Running Total', dataIndex: 'RunningTotal' },
-        { text: 'Feature Estimate', dataIndex: 'FeaturePointEstimate' },
+        { text: 'Feature Estimate', dataIndex: 'FeatureEstimate' },
         { text: 'Planned Start', dataIndex: 'PlannedStartDate', renderer: renderUSDate },
         { text: 'Planned End', dataIndex: 'PlannedEndDate', renderer: renderUSDate },
         { text: 'State', dataIndex: 'State', renderer: renderFieldName },
