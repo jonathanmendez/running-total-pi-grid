@@ -18,6 +18,7 @@ Ext.define('CustomApp', {
     extend: 'Rally.app.App',
     field_to_sum: 'FeatureEstimate',
     columns: [
+        { xtype: 'rallyrankcolumn' },
         { text: 'ID', dataIndex: 'FormattedID' },
         { text: 'Name', dataIndex: 'Name', flex: 1 },
         { text: 'Running Total', dataIndex: 'RunningTotal' },
@@ -29,7 +30,7 @@ Ext.define('CustomApp', {
         { text: 'Parent', dataIndex: 'Parent', renderer: renderFieldName }
     ],
     componentCls: 'app',
-    items: [{ xtype: 'container', itemId: 'grid_box', height: 500 }],
+    items: [{ xtype: 'container', itemId: 'grid_box' }],
     launch: function() {
     	this._getPIModel();
     },
@@ -47,7 +48,13 @@ Ext.define('CustomApp', {
     	if ( this.model ) {
     		this.pigrid = Ext.create( 'Rally.ui.grid.Grid', {
     			model: this.model,
-    			enableRanking: true,
+    			height: 500,
+    			/*enableRanking: true,*/
+    			viewConfig: {
+    				plugins: [
+    					{ ptype: 'rallydragdrop2' }
+    				]
+    			},
 	    		columnCfgs: this.columns,
                 storeConfig: {
                     sorters: [ { property: 'Rank', direction: 'ASC' } ],

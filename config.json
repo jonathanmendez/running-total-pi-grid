@@ -4,6 +4,7 @@
     "server": "https://trial.rallydev.com",
     "sdk": "2.0p5",
     "javascript": [
+        "rally-drag-drop-2.js",
         "App.js"
     ],
     "css": [
