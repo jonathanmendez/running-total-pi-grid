@@ -425,23 +425,40 @@
             Ext.define('CustomApp', {
                 extend: 'Rally.app.App',
                 field_to_sum: 'FeatureEstimate',
-                columns: [
-                    { xtype: 'rallyrankcolumn' },
-                    { text: 'ID', dataIndex: 'FormattedID' },
-                    { text: 'Name', dataIndex: 'Name', editor: 'rallytextfield', flex: 1 },
-                    { text: 'Running Total', dataIndex: 'RunningTotal' },
-                    { text: 'Feature Estimate', dataIndex: 'FeatureEstimate', editor: 'rallynumberfield' },
-                    { text: 'Planned Start', dataIndex: 'PlannedStartDate', renderer: renderUSDate },
-                    { text: 'Planned End', dataIndex: 'PlannedEndDate', renderer: renderUSDate },
-                    { text: 'State', dataIndex: 'State', renderer: renderFieldName },
-                    { text: 'Owner', dataIndex: 'Owner', renderer: renderFieldName },
-                    { text: 'Parent', dataIndex: 'Parent', renderer: renderFieldName }
-                ],
                 componentCls: 'app',
                 items: [{ xtype: 'container', itemId: 'grid_box' }],
                 launch: function() {
                     window.console && console.log( "launch" );
+                    this._setColumns();
                 	this._getPIModel();
+                },
+                _setColumns: function() {
+                    this.columns = [
+            	        { xtype: 'rallyrankcolumn' },
+            	        { text: 'ID', dataIndex: 'FormattedID' },
+            	        { text: 'Name', dataIndex: 'Name', editor: 'rallytextfield', flex: 1 },
+            	        { text: 'Running Total', dataIndex: 'RunningTotal' },
+            	        { text: 'Feature Estimate', dataIndex: 'FeatureEstimate', editor: 'rallynumberfield' },
+            	        { text: 'Planned Start', dataIndex: 'PlannedStartDate', renderer: renderUSDate },
+            	        { text: 'Planned End', dataIndex: 'PlannedEndDate', renderer: renderUSDate },
+            	        { text: 'State', dataIndex: 'State', editor: this._getStateEditor(), renderer: renderFieldName },
+            	        { text: 'Owner', dataIndex: 'Owner', renderer: renderFieldName },
+            	        { text: 'Parent', dataIndex: 'Parent', renderer: renderFieldName }
+            	    ];
+                },
+                
+                _getStateEditor: function() {
+                    var editor = {
+                        xtype: 'rallycombobox',
+                        displayField: 'Name',
+                        valueField: '_ref',
+                        storeConfig: {
+            		        autoLoad: true,
+            		        model: 'State',
+                            filters: [{ property: 'TypeDef.Name', operator: 'contains', value: 'Feature' }]
+            		    }
+                    };
+                    return editor;
                 },
                 _getPIModel: function() {
                 	Rally.data.ModelFactory.getModel({
