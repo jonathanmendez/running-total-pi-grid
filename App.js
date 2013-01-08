@@ -31,8 +31,8 @@ Ext.define('CustomApp', {
 	        { text: 'Name', dataIndex: 'Name', editor: 'rallytextfield', flex: 1 },
 	        { text: 'Running Total', dataIndex: 'RunningTotal' },
 	        { text: 'Feature Estimate', dataIndex: 'FeatureEstimate', editor: 'rallynumberfield' },
-	        { text: 'Planned Start', dataIndex: 'PlannedStartDate', renderer: renderUSDate },
-	        { text: 'Planned End', dataIndex: 'PlannedEndDate', renderer: renderUSDate },
+	        { text: 'Planned Start', dataIndex: 'PlannedStartDate', editor: 'rallydatefield', renderer: renderUSDate },
+	        { text: 'Planned End', dataIndex: 'PlannedEndDate', editor: 'rallydatefield', renderer: renderUSDate },
 	        { text: 'State', dataIndex: 'State', editor: this._getStateEditor(), renderer: renderFieldName },
 	        { text: 'Owner', dataIndex: 'Owner', renderer: renderFieldName },
 	        { text: 'Parent', dataIndex: 'Parent', renderer: renderFieldName }

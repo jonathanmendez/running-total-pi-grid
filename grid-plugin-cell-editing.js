@@ -1,4 +1,9 @@
 /**
+ * Temporary hack to remove publishing message so that editing in-line 
+ * doesn't refresh the whole app
+ */
+
+/**
  * @private
  * Plugin for grid cell editing
  */
