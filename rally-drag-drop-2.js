@@ -21,11 +21,13 @@ Ext.define('Rally.ui.grid.plugin.DragDrop2', {
     ],
 
     init: function(view) {
+    	window.console && console.log( "rdd2.init" );
         this.view = view;
         this.view.mon(this.view.getStore(), 'load', this._onStoreLoad, this);
         this.view.mon(this.view, 'drop', this._onDrop, this);
         this.view.headerCt.mon(this.view.headerCt, 'columnshow', this._setupRankColumn, this);
         this.callParent(arguments);
+        this.enable();  // assuming we're starting ranked.  Data load isn't kicking this off!
     },
 
     destroy: function() {

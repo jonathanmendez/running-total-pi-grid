@@ -100,7 +100,6 @@ Ext.define('CustomApp', {
                         var value = record.data[this.field_to_sum] || 0;
                         running_total += value;
                         record.set( "RunningTotal", running_total);
-                        //record.data.RunningTotal = running_total;
                     }
                 },
     			scope: this
