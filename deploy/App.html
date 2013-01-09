@@ -447,10 +447,14 @@
                     this._setColumns();
                 	this._getPIModel();
                 },
+                _getBaseURL: function() {
+                    var base_url = this.getContext().getWorkspace()._ref.replace(/slm[\w\W]*/,"");
+                    return base_url;
+                },
                 _setColumns: function() {
                     this.columns = [
             	        { xtype: 'rallyrankcolumn' },
-            	        { text: 'ID', dataIndex: 'FormattedID', flex: 0.25 },
+            	        { text: 'ID', dataIndex: 'FormattedID', width: 50 },
             	        { text: 'Name', dataIndex: 'Name', editor: 'rallytextfield', flex: 2.5 },
             	        { text: 'Running Total', dataIndex: 'RunningTotal', flex: 0.5  },
             	        { text: 'Feature Estimate', dataIndex: 'FeatureEstimate', editor: 'rallynumberfield', flex: 0.5 },
@@ -479,7 +483,13 @@
                 _addPrintButton: function() {
                     window.console && console.log( "_addPrintButton" );
                     this.down('#button_box').add(Ext.create('Rally.ui.Button', { 
-                        text: 'Do Nothing'
+                        text: 'Print',
+                        listeners: {
+                            click: {
+                                fn: function() { this._print('grid_box'); },
+                                scope: this
+                            }
+                        }
                     }));
                     
                 },
@@ -506,6 +516,18 @@
                 		scope: this
                 	});
                 },
+                _getFilters: function() {
+                    var filters = [ { property: 'ObjectID', operator: '>', value: '0' }];
+                    if ( this.date_picker.getValue() ) {
+                        var iso_value = Rally.util.DateTime.toIsoString( this.date_picker.getValue() );
+                        filters = Ext.create('Rally.data.QueryFilter',
+                            { property: 'PlannedEndDate', operator: '=', value: "null" }).or( Ext.create( 'Rally.data.QueryFilter',
+                            { property: 'PlannedEndDate', operator: '>', value: iso_value }));
+                        window.console && console.log( filters.toString() );
+                        
+                    }
+                    return filters;
+                },
                 _getFetchFields: function() {
                     var fields = [];
                     Ext.Array.each( this.columns, function( col ) {
@@ -518,19 +540,10 @@
                 _getData: function() {
                 	var that = this;
                     window.console && console.log( this.date_picker.getValue() );
-                    var filters = [ { property: 'ObjectID', operator: '>', value: '0' }];
-                    if ( this.date_picker.getValue() ) {
-                        var iso_value = Rally.util.DateTime.toIsoString( this.date_picker.getValue() );
-                        filters = Ext.create('Rally.data.QueryFilter',
-                            { property: 'PlannedEndDate', operator: '=', value: "null" }).or( Ext.create( 'Rally.data.QueryFilter',
-                            { property: 'PlannedEndDate', operator: '>', value: iso_value }));
-                        window.console && console.log( filters.toString() );
-                        
-                    }
                 	this.pi_store = Ext.create('Rally.data.WsapiDataStore', {
                 		autoLoad: true,
                 		model: that.model,
-                        filters: filters,
+                        filters: that._getFilters(),
                         sorters: [ { property: 'Rank', direction: 'ASC' } ],
                 		listeners: {
                 			load: function(store,data,success) {
@@ -584,6 +597,93 @@
                 	    this.down('#grid_box').add(this.pi_grid);
                         
                 	}
+                },
+                _print: function() {
+                    var that = this;
+                    
+                    var cols = [
+                        { text: 'ID', dataIndex: 'FormattedID', width: 50 },
+                        { text: 'Name', dataIndex: 'Name', editor: 'rallytextfield', flex: 2 },
+                        { text: 'Running Total', dataIndex: 'RunningTotal' },
+                        { text: 'Feature Estimate', dataIndex: 'FeatureEstimate', editor: 'rallynumberfield' },
+                        { text: 'Planned Start', dataIndex: 'PlannedStartDate', editor: 'rallydatefield', renderer: renderUSDate },
+                        { text: 'Planned End', dataIndex: 'PlannedEndDate', editor: 'rallydatefield', renderer: renderUSDate },
+                        { text: 'State', dataIndex: 'State', editor: this._getStateEditor(), renderer: renderFieldName },
+                        { text: 'Owner', dataIndex: 'Owner', renderer: renderFieldName },
+                        { text: 'Parent', dataIndex: 'Parent', renderer: renderFieldName }
+                    ];
+                    var hidden_window = Ext.create( 'Ext.window.Window', {
+                        title: '',
+                        width: 1048,
+                        height: 200,
+                        overflowX: 'hidden',
+                        layout: 'fit',
+                        items: [ { xtype: 'container', itemId: 'grid_box' } ]
+                    }).show();
+                    
+                    print_store = Ext.create('Rally.data.WsapiDataStore', {
+                        autoLoad: true,
+                        model: that.model,
+                        filters: that._getFilters(),
+                        sorters: [ { property: 'Rank', direction: 'ASC' } ],
+                        listeners: {
+                            load: function(store,data,success) {
+                                window.console && console.log( "load" );
+                                var records = store.getRecords();
+                                var running_total = 0;
+                                for ( var i=0; i<records.length; i++ ) {
+                                    var record = records[i];
+                                    var value = record.data[this.field_to_sum] || 0;
+                                    running_total += value;
+                                    record.data.RunningTotal = running_total;
+                                }
+                                var hidden_grid = Ext.create( 'Rally.ui.grid.Grid', {
+            			            model: this.model,
+            			            // columnCfgs: this.columns.slice(1,this.columns.length),
+                                    columnCfgs: cols,
+            			            store: print_store,
+                                    overflowX: 'hidden',
+                                    margin: 5,
+                                    layout: 'fit',
+            			            showPagingToolbar: false,
+            			            listeners: {
+            			                viewready: function( grid, options ) {
+                                            window.console && console.log( "print grid view_ready" );
+            			                    var print_window = window.open('','', 'width=800,height=200');
+            			                    print_window.focus();
+            			                    print_window.document.write( '<html><head>');
+            			                    print_window.document.write('<title>Feature Print</title>');
+            			                    print_window.document.write('<link rel="Stylesheet" type="text/css" href="' + that._getBaseURL() + 'apps/2.0p5/rui/resources/css/rui.css" />');
+            			                    print_window.document.write('</head>');
+            			                    print_window.document.write('<body>');
+            			                    print_window.document.write( hidden_grid.getEl().getHTML() );
+            			                    print_window.document.write('</body>');
+            			                    print_window.document.write('</html>'); 
+            			                    
+            			                    hidden_window.hide();
+            			                    print_window.print();
+                                            print_window.close();
+            			                }
+            			            }
+            			        });
+                                hidden_window.down('#grid_box').add( hidden_grid );
+                            },
+                            scope: this
+                        },
+                        fetch: that._getFetchFields()
+                    });  
+                },
+                _printOld: function( element_name ) {
+                    var printElement = this.down('#'+element_name);
+                    var printWindow = window.open('','', 'width=400,height=200');
+                    printWindow.document.write( '<html><head>');
+                    printWindow.document.write('<title>Feature Print</title>');
+                    printWindow.document.write('<link rel="Stylesheet" type="text/css" href="' + this._getBaseURL() + 'apps/2.0p5/rui/resources/css/rui.css" />');
+                    
+                    printWindow.document.write('</head><body>');
+                    printWindow.document.write(printElement.el.dom.innerHTML);
+                    printWindow.document.write('</body></html>');
+                    printWindow.print();
                 }
             });
 
