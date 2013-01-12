@@ -192,5 +192,7 @@ Ext.define('Rally.ui.grid.plugin.DragDrop2', {
     _onRank: function(record, operation) {
         this.view.ownerCt.setLoading(false);
         this.view.publish(Rally.Message.objectUpdate, record, this.view);
+        Rally.ui.flair.FlairManager.hideAllFlairMessages();
+
     }
 });
