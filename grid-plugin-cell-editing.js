@@ -1,6 +1,8 @@
 /**
  * Temporary hack to remove publishing message so that editing in-line 
  * doesn't refresh the whole app
+ * 
+ * AND to stick in pencil (the editing hover over only on editable fields)
  */
 
 /**
@@ -70,7 +72,7 @@ Ext.define('Rally.ui.grid.plugin.CellEditing', {
                  */
                 'inlineEditSaved'
         );
-
+        
         this.mon(this.grid, 'edit', this._saveInlineEdit, this);
         this.mon(this.grid.getView(), 'uievent', this._onUiEvent, this);
         this.mon(this.grid, 'beforeedit', this._onBeforeEdit, this);
@@ -159,14 +161,25 @@ Ext.define('Rally.ui.grid.plugin.CellEditing', {
         this.grid.doLayout();
     },
 
+    _isEditableCell: function( view, cellIndex ) {
+    	var columns = view.getGridColumns();
+    	var result = false;
+    	if ( columns[cellIndex].editor ) {
+    		result = true;
+    	}
+    	return result;
+    },
     _onUiEvent: function(type, view, cell, rowIndex, cellIndex, e) {
         var cellEl = Ext.fly(cell);
         if (cellEl) {
-            if (type === 'mouseover') {
-                cellEl.addCls('rally-edit-cell-over');
-            } else if (type === 'mouseout') {
-                cellEl.removeCls('rally-edit-cell-over');
-            }
+        	console.log(  );
+        	if (this._isEditableCell(view, cellIndex) ) {
+	            if (type === 'mouseover') {
+	                cellEl.addCls('rally-edit-cell-over');
+	            } else if (type === 'mouseout') {
+	                cellEl.removeCls('rally-edit-cell-over');
+	            }
+        	}
         }
     },
 

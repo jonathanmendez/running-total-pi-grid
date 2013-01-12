@@ -172,8 +172,9 @@ Ext.define('CustomApp', {
                 this.pi_grid.destroy();
             } 
     		this.pi_grid = Ext.create( 'Rally.ui.grid.Grid', {
-    			model: this.model,
+    			/*model: this.model,*/
     			height: 475,
+                
     			/*enableRanking: true,*/
     			viewConfig: {
     				plugins: [
