@@ -19,11 +19,11 @@ Ext.define('CustomApp', {
     field_to_sum: 'FeatureEstimate',
     componentCls: 'app',
     items: [
+        { xtype: 'container', itemId: 'grid_box' },      
         { xtype: 'container',  layout: { type: 'hbox' }, items: [ 
             { xtype: 'container', margin: 5, itemId: 'date_box' }, 
             { xtype: 'container', margin: 5, itemId: 'button_box' } 
-        ]},
-        { xtype: 'container', itemId: 'grid_box' }
+        ]}
     ],
     launch: function() {
         window.console && console.log( "launch" );
