@@ -13,6 +13,9 @@ var renderFieldName = function(value) {
     }
     return display_value;
 };
+var renderRank = function(value, metaData, record, rowIndex, colIndex, store, view) {
+    return rowIndex + 1;  
+};
     
 Ext.define('CustomApp', {
     extend: 'Rally.app.App',
@@ -38,16 +41,17 @@ Ext.define('CustomApp', {
     },
     _setColumns: function() {
         this.columns = [
-	        { xtype: 'rallyrankcolumn' },
-	        { text: 'ID', dataIndex: 'FormattedID', width: 50 },
-	        { text: 'Name', dataIndex: 'Name', editor: 'rallytextfield', flex: 2.5 },
-	        { text: 'Running Total', dataIndex: 'RunningTotal', flex: 0.5  },
-	        { text: 'Feature Estimate', dataIndex: 'FeatureEstimate', editor: 'rallynumberfield', flex: 0.5 },
-	        { text: 'Planned Start', dataIndex: 'PlannedStartDate', editor: 'rallydatefield', renderer: renderUSDate, flex: 0.75 },
-	        { text: 'Planned End', dataIndex: 'PlannedEndDate', editor: 'rallydatefield', renderer: renderUSDate, flex: 0.75 },
-	        { text: 'State', dataIndex: 'State', editor: this._getStateEditor(), renderer: renderFieldName, flex: 1.25 },
-	        { text: 'Owner', dataIndex: 'Owner', renderer: renderFieldName, flex: 0.75 },
-	        { text: 'Parent', dataIndex: 'Parent', renderer: renderFieldName, flex: 2 }
+	        { xtype: 'rallyrankcolumn', sortable: false },
+            { text: ' ', dataIndex: 'Rank', width: 45, renderer: renderRank, sortable: false },
+	        { text: 'ID', dataIndex: 'FormattedID', width: 50, sortable: false },
+	        { text: 'Name', dataIndex: 'Name', editor: 'rallytextfield', flex: 2.5, sortable: false },
+	        { text: 'Running Total', dataIndex: 'RunningTotal', flex: 0.5, sortable: false  },
+	        { text: 'Feature Estimate', dataIndex: 'FeatureEstimate', editor: 'rallynumberfield', flex: 0.5, sortable: false },
+	        { text: 'Planned Start', dataIndex: 'PlannedStartDate', editor: 'rallydatefield', renderer: renderUSDate, flex: 0.75, sortable: false },
+	        { text: 'Planned End', dataIndex: 'PlannedEndDate', editor: 'rallydatefield', renderer: renderUSDate, flex: 0.75, sortable: false },
+	        { text: 'State', dataIndex: 'State', editor: this._getStateEditor(), renderer: renderFieldName, flex: 1.25, sortable: false },
+	        { text: 'Owner', dataIndex: 'Owner', renderer: renderFieldName, flex: 0.75, sortable: false },
+	        { text: 'Parent', dataIndex: 'Parent', renderer: renderFieldName, flex: 2, sortable: false }
 	    ];
     },
     _addDatePicker: function() {

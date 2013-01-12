@@ -125,6 +125,7 @@ Ext.define('Rally.ui.grid.plugin.DragDrop2', {
     },
 
     _showRankColumn: function() {
+        console.log( this.view.rendered );
         if (!this.view.hasCls(this.rankEnabledCls)) {
             this.view.addCls(this.rankEnabledCls);
         }
