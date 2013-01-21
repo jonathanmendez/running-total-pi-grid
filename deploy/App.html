@@ -448,6 +448,13 @@
                 return rowIndex + 1;  
             };
                 
+            var renderId = function(value, metaData, record, rowIndex, colIndex, store, view) {
+                var item = record.getData();
+                var url = Rally.util.Navigation.createRallyDetailUrl(item);
+                var formatted_string = "<a target='_top' href='/#" + url + "'>" + item.FormattedID + "</a>";
+                return formatted_string;  
+            };
+            
             Ext.define('CustomApp', {
                 extend: 'Rally.app.App',
                 field_to_sum: 'FeatureEstimate',
@@ -474,7 +481,7 @@
                     this.columns = [
             	        { xtype: 'rallyrankcolumn', sortable: false },
                         { text: ' ', dataIndex: 'Rank', width: 45, renderer: renderRank, sortable: false },
-            	        { text: 'ID', dataIndex: 'FormattedID', width: 50, sortable: false },
+            	        { text: 'ID', dataIndex: 'FormattedID', width: 50, renderer: renderId, sortable: false },
             	        { text: 'Name', dataIndex: 'Name', editor: 'rallytextfield', flex: 2.5, sortable: false },
             	        { text: 'Running Total', dataIndex: 'RunningTotal', flex: 0.5, sortable: false  },
             	        { text: 'Feature Estimate', dataIndex: 'FeatureEstimate', editor: 'rallynumberfield', flex: 0.5, sortable: false },
