@@ -32,12 +32,15 @@ Ext.define('CustomApp', {
         { xtype: 'container', itemId: 'grid_box' },      
         { xtype: 'container',  layout: { type: 'hbox' }, items: [ 
             { xtype: 'container', margin: 5, itemId: 'date_box' }, 
-            { xtype: 'container', margin: 5, itemId: 'button_box' } 
+            { xtype: 'container', margin: 5, itemId: 'edit_box' },
+            { xtype: 'container', margin: 5, itemId: 'print_box' } 
         ]}
     ],
+    selected_rows: [],
     launch: function() {
         window.console && console.log( "launch" );
         this._addDatePicker();
+        this._addEditButton();
         this._addPrintButton();
         this._setColumns();
     	this._getPIModel();
@@ -46,9 +49,26 @@ Ext.define('CustomApp', {
         var base_url = this.getContext().getWorkspace()._ref.replace(/slm[\w\W]*/,"");
         return base_url;
     },
+    _getGearColumn: function() {
+        var that = this;
+        var gear_config = {
+            xtype: 'actioncolumn',
+            width: 40,
+            cls: 'row-actions',
+            items: [{
+                icon: that._getBaseURL() + 'slm/js/rally/resources/images/gear/gear-active.png',
+                tooltip: 'Edit',
+                handler: function( grid, rowIndex, colIndex) {
+                    console.log( grid );
+                }
+            }]
+        };
+        return gear_config;
+    },
     _setColumns: function() {
         this.columns = [
 	        { xtype: 'rallyrankcolumn', sortable: false },
+            /*this._getGearColumn(),*/
             { text: ' ', dataIndex: 'Rank', width: 45, renderer: renderRank, sortable: false },
 	        { text: 'ID', dataIndex: 'FormattedID', width: 50, renderer: renderId, sortable: false },
 	        { text: 'Name', dataIndex: 'Name', editor: 'rallytextfield', flex: 2.5, sortable: false },
@@ -76,9 +96,47 @@ Ext.define('CustomApp', {
         } );
         this.down("#date_box").add(this.date_picker);
     },
+    _addEditButton: function() {
+        window.console && console.log( "_addEditButton" );
+        var that = this;
+        this.edit_button = Ext.create('Rally.ui.Button', {
+            text: 'Multi-Edit',
+            disabled: true,
+            listeners: {
+                click: {
+                    fn: function(){ 
+                        window.console && console.log( "click edit button", this.selected_rows);
+                        var that = this;
+                        Ext.create('Rally.pxs.dialog.FieldEditDialog', {
+						    fieldCfgs: [ 
+                                { label: 'FeatureEstimate', editor: 'rallynumberfield' },
+                                { label: 'PlannedStartDate', editor: 'rallydatefield' },
+                                { label: 'PlannedEndDate', editor: 'rallydatefield' },
+                                { label: 'State', editor: that._getStateEditor() }
+                            ],
+						    saveLabel: 'Save',
+						    saveFn: function(dialog, selectedField, newValue) {
+                                that.edit_button.disable();
+                                Ext.Array.each( that.selected_rows, function( row ) {
+                                    console.log( row, selectedField, newValue );
+		                            row.set(selectedField, newValue);
+		                            row.save();
+		                        });
+                                that.pi_grid.getSelectionModel().deselectAll();
+						    }
+                        }).show();
+
+                    },
+                    scope: this
+                }
+            }
+        });
+        
+        this.down('#edit_box').add(this.edit_button);
+    },
     _addPrintButton: function() {
         window.console && console.log( "_addPrintButton" );
-        this.down('#button_box').add(Ext.create('Rally.ui.Button', { 
+        this.down('#print_box').add(Ext.create('Rally.ui.Button', { 
             text: 'Print',
             listeners: {
                 click: {
@@ -181,7 +239,22 @@ Ext.define('CustomApp', {
     		this.pi_grid = Ext.create( 'Rally.ui.grid.Grid', {
     			/*model: this.model,*/
     			height: 475,
-                
+                selType: 'checkboxmodel',
+                selModel: {
+                    injectCheckbox: 1,
+                    mode: 'SIMPLE',
+                    listeners: {
+                        selectionchange: function( model, selected ) {
+                            this.selected_rows = selected;
+                            if ( selected.length === 0 ) {
+                                this.edit_button.disable();
+                            } else {
+                                this.edit_button.enable();
+                            }
+                        },
+                        scope: this
+                    }
+                },
     			/*enableRanking: true,*/
     			viewConfig: {
     				plugins: [
@@ -192,7 +265,6 @@ Ext.define('CustomApp', {
 	    		store: this.pi_store
     		});
     	    this.down('#grid_box').add(this.pi_grid);
-            
     	}
     },
     _print: function() {

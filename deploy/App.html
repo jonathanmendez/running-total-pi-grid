@@ -7,7 +7,151 @@
 
     <script type="text/javascript">
         Rally.onReady(function() {
-            /**
+            /*
+             * A dialog that allows the user to pick a field and a value
+             * 
+             * @example
+             * Ext.create('Rally.pxs.dialog.FieldEditDialog, {
+             *      fieldCfgs: [ { label: 'FieldName', editor: 'rallytextfield' } ],
+             *      saveLabel: 'Save',
+             *      saveFn: function() {
+             *          // do something awesome
+             *      }
+             * }).show();
+             */
+             Ext.define( 'Rally.pxs.dialog.FieldEditDialog', {
+                extend: 'Rally.ui.dialog.Dialog',
+                alias: 'widget.pxsfieldeditdialog',
+                width: 350,
+                closable: true,
+                config: {
+                    /**
+                     * @cfg {String}
+                     * Title to give to the dialog
+                     */
+                     title: 'Apply Change To All Selected Records',
+                     
+                     /**
+                      * @cfg {String}
+                      * The label for the save button
+                      */
+                      saveLabel: 'Save',
+                      
+                      /**
+                       * @cfg {Function}
+                       * Function called when the save button is pushed
+                       * @param {Rally.pxs.dialog.FieldEditDialog} this
+                       * @param {String} newValue
+                       */
+                       saveFn: Ext.emptyFn,
+                       
+                       /**
+                        * @cfg {Function}
+                        * Function called when the cancel button is pushed
+                        */
+                        cancelFn: Ext.emptyFn,
+                        
+                        /**
+                         * @cfg {Object}
+                         * Scope to call the functions with
+                         */
+                         scope: undefined,
+                         
+                         /**
+                          * @cfg {Object}
+                          * An array of objects with two fields: label: label to show, editor: same as column editor
+                          */
+                          fieldCfgs: []
+                },
+                items: {
+                    xtype: 'panel',
+                    border: false,
+                    items: [
+                        { xtype: 'container', layout: 'hbox', defaults: {padding: 10}, items: [
+            	            { xtype: 'container', itemId: 'field_selector' },
+            	            { xtype: 'container', itemId: 'field_editor' }
+                        ] }
+                    ]
+                },
+                constructor: function(config) {
+                    this.mergeConfig(config);
+                    this.callParent(arguments);
+                },
+                initComponent: function() {
+                    this.callParent(arguments);
+            
+                    this._addButtons();
+                    this._createFieldSelector();
+                },
+                _createFieldSelector: function() {
+                    if ( this.config.fieldCfgs.length === 0 ) {
+                        throw "no fieldCfgs provided to 'pxsfieldeditdialog";
+                    }
+                    var store = Ext.create('Ext.data.Store', {
+                        fields: [ 'label', 'editor' ],
+                        data: this.config.fieldCfgs
+                    });
+                    this.field_selector = Ext.create('Ext.form.field.ComboBox', {
+                        store: store,
+                        queryMode: 'local',
+                        displayField: 'label',
+                        valueField: 'editor',
+                        listeners: {
+                            scope: this,
+                            change: function(field,newValue) {
+                                if ( this.down('#field_box') ) { 
+                                    this.down('#field_box').destroy(); 
+                                }
+                                if ( typeof(newValue) === "string" ) {
+                                   this.down('#field_editor').add({ 
+            	                        xtype: newValue,
+                                        itemId: "field_box"
+            	                    }); 
+                                } else {
+                                    newValue["itemId"] = "field_box";
+                                    this.down('#field_editor').add(newValue);
+                                }
+                                
+                            }
+                        }
+                    });
+                    
+                    this.down('#field_selector').add(this.field_selector);
+                },
+                _addButtons: function() {
+                    var that = this;
+                    this.down('panel').addDocked({
+                        xtype: 'toolbar',
+                        dock: 'bottom',
+                        padding: '0 0 10 0',
+                        layout: {
+                            pack: 'center'
+                        },
+                        ui: 'footer',
+                        items: [
+                        {
+                            xtype: 'rallybutton',
+                            text: this.config.saveLabel,
+                            handler: function() {
+                                this.config.saveFn.call(this.config.scope, this, this.field_selector.getRawValue(),  this.down('#field_box').getValue());
+                                this.close();
+                            },
+                            scope: this
+                        },
+                        {
+                            xtype: 'rallybutton',
+                            text: 'Cancel',
+                            handler: function() {
+                                this.config.cancelFn.call(this.config.scope);
+                                this.close();
+                            },
+                            scope: this,
+                            ui: 'link'
+                        }
+                        ]
+                    });
+                }
+             });            /**
              * Temporary hack to remove publishing message so that editing in-line 
              * doesn't refresh the whole app
              * 
@@ -463,12 +607,15 @@
                     { xtype: 'container', itemId: 'grid_box' },      
                     { xtype: 'container',  layout: { type: 'hbox' }, items: [ 
                         { xtype: 'container', margin: 5, itemId: 'date_box' }, 
-                        { xtype: 'container', margin: 5, itemId: 'button_box' } 
+                        { xtype: 'container', margin: 5, itemId: 'edit_box' },
+                        { xtype: 'container', margin: 5, itemId: 'print_box' } 
                     ]}
                 ],
+                selected_rows: [],
                 launch: function() {
                     window.console && console.log( "launch" );
                     this._addDatePicker();
+                    this._addEditButton();
                     this._addPrintButton();
                     this._setColumns();
                 	this._getPIModel();
@@ -477,9 +624,26 @@
                     var base_url = this.getContext().getWorkspace()._ref.replace(/slm[\w\W]*/,"");
                     return base_url;
                 },
+                _getGearColumn: function() {
+                    var that = this;
+                    var gear_config = {
+                        xtype: 'actioncolumn',
+                        width: 40,
+                        cls: 'row-actions',
+                        items: [{
+                            icon: that._getBaseURL() + 'slm/js/rally/resources/images/gear/gear-active.png',
+                            tooltip: 'Edit',
+                            handler: function( grid, rowIndex, colIndex) {
+                                console.log( grid );
+                            }
+                        }]
+                    };
+                    return gear_config;
+                },
                 _setColumns: function() {
                     this.columns = [
             	        { xtype: 'rallyrankcolumn', sortable: false },
+                        /*this._getGearColumn(),*/
                         { text: ' ', dataIndex: 'Rank', width: 45, renderer: renderRank, sortable: false },
             	        { text: 'ID', dataIndex: 'FormattedID', width: 50, renderer: renderId, sortable: false },
             	        { text: 'Name', dataIndex: 'Name', editor: 'rallytextfield', flex: 2.5, sortable: false },
@@ -507,9 +671,47 @@
                     } );
                     this.down("#date_box").add(this.date_picker);
                 },
+                _addEditButton: function() {
+                    window.console && console.log( "_addEditButton" );
+                    var that = this;
+                    this.edit_button = Ext.create('Rally.ui.Button', {
+                        text: 'Multi-Edit',
+                        disabled: true,
+                        listeners: {
+                            click: {
+                                fn: function(){ 
+                                    window.console && console.log( "click edit button", this.selected_rows);
+                                    var that = this;
+                                    Ext.create('Rally.pxs.dialog.FieldEditDialog', {
+            						    fieldCfgs: [ 
+                                            { label: 'FeatureEstimate', editor: 'rallynumberfield' },
+                                            { label: 'PlannedStartDate', editor: 'rallydatefield' },
+                                            { label: 'PlannedEndDate', editor: 'rallydatefield' },
+                                            { label: 'State', editor: that._getStateEditor() }
+                                        ],
+            						    saveLabel: 'Save',
+            						    saveFn: function(dialog, selectedField, newValue) {
+                                            that.edit_button.disable();
+                                            Ext.Array.each( that.selected_rows, function( row ) {
+                                                console.log( row, selectedField, newValue );
+            		                            row.set(selectedField, newValue);
+            		                            row.save();
+            		                        });
+                                            that.pi_grid.getSelectionModel().deselectAll();
+            						    }
+                                    }).show();
+            
+                                },
+                                scope: this
+                            }
+                        }
+                    });
+                    
+                    this.down('#edit_box').add(this.edit_button);
+                },
                 _addPrintButton: function() {
                     window.console && console.log( "_addPrintButton" );
-                    this.down('#button_box').add(Ext.create('Rally.ui.Button', { 
+                    this.down('#print_box').add(Ext.create('Rally.ui.Button', { 
                         text: 'Print',
                         listeners: {
                             click: {
@@ -612,7 +814,22 @@
                 		this.pi_grid = Ext.create( 'Rally.ui.grid.Grid', {
                 			/*model: this.model,*/
                 			height: 475,
-                            
+                            selType: 'checkboxmodel',
+                            selModel: {
+                                injectCheckbox: 1,
+                                mode: 'SIMPLE',
+                                listeners: {
+                                    selectionchange: function( model, selected ) {
+                                        this.selected_rows = selected;
+                                        if ( selected.length === 0 ) {
+                                            this.edit_button.disable();
+                                        } else {
+                                            this.edit_button.enable();
+                                        }
+                                    },
+                                    scope: this
+                                }
+                            },
                 			/*enableRanking: true,*/
                 			viewConfig: {
                 				plugins: [
@@ -623,7 +840,6 @@
             	    		store: this.pi_store
                 		});
                 	    this.down('#grid_box').add(this.pi_grid);
-                        
                 	}
                 },
                 _print: function() {
