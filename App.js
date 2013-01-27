@@ -120,7 +120,8 @@ Ext.define('CustomApp', {
                                 { label: 'FeatureEstimate', editor: 'rallynumberfield' },
                                 { label: 'PlannedStartDate', editor: 'rallydatefield' },
                                 { label: 'PlannedEndDate', editor: 'rallydatefield' },
-                                { label: 'State', editor: that._getStateEditor() }
+                                { label: 'State', editor: that._getStateEditor() },
+                                { label: 'Owner', editor: { xtype: 'rallyusercombobox', project: this.getContext().getProject() } }
                             ],
 						    saveLabel: 'Save',
 						    saveFn: function(dialog, selectedField, newValue) {
