@@ -30,10 +30,16 @@ Ext.define('CustomApp', {
     componentCls: 'app',
     items: [
         { xtype: 'container', itemId: 'grid_box' },      
-        { xtype: 'container',  layout: { type: 'hbox' }, items: [ 
-            { xtype: 'container', margin: 5, itemId: 'date_box' }, 
-            { xtype: 'container', margin: 5, itemId: 'edit_box' },
-            { xtype: 'container', margin: 5, itemId: 'print_box' } 
+        { xtype: 'container',  
+            layout: { 
+                type: 'hbox'
+            }, 
+            items: [ 
+                { xtype: 'container', margin: 5, layout: { type: 'hbox' }, items: [
+		            { xtype: 'container', margin: 5, itemId: 'edit_box' },
+		            { xtype: 'container', margin: 5, itemId: 'print_box' } 
+                ]},
+                { xtype: 'container', margin: 5, itemId: 'date_box'}
         ]}
     ],
     selected_rows: [],
@@ -84,7 +90,8 @@ Ext.define('CustomApp', {
     _addDatePicker: function() {
         window.console && console.log( "_addDatePicker" );
         this.date_picker = Ext.create( 'Rally.ui.DateField',{
-            fieldLabel: 'Planned Items After ',
+            fieldLabel: 'Show Items Planned After ',
+            labelAlign: 'top',
             labelWidth: 125,
             value: Rally.util.DateTime.add( new Date(), "month", -1 ),
             listeners: {
@@ -100,7 +107,8 @@ Ext.define('CustomApp', {
         window.console && console.log( "_addEditButton" );
         var that = this;
         this.edit_button = Ext.create('Rally.ui.Button', {
-            text: 'Multi-Edit',
+            text: '',
+            icon: '/slm/images/icon_edit_view.gif',
             disabled: true,
             listeners: {
                 click: {
