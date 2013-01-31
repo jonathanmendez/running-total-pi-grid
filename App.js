@@ -164,7 +164,10 @@ Ext.define('CustomApp', {
             storeConfig: {
 		        autoLoad: true,
 		        model: 'State',
-                filters: [{ property: 'TypeDef.Name', operator: 'contains', value: 'Feature' }]
+                filters: [
+                    { property: 'TypeDef.Name', operator: 'contains', value: 'Feature' },
+                    { property: 'Enabled', operator: '=', value: 'true' }
+                    ]
 		    }
         };
         return editor;
