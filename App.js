@@ -93,6 +93,8 @@ Ext.define('CustomApp', {
             fieldLabel: 'Show Items Planned After ',
             labelAlign: 'top',
             labelWidth: 125,
+            stateful: true,
+            stateId: 'rallydev-pxs-runningtotal-datepicker',
             value: Rally.util.DateTime.add( new Date(), "month", -1 ),
             listeners: {
                 change: function( field, newValue, oldValue, eOpts ) {
@@ -205,41 +207,43 @@ Ext.define('CustomApp', {
     },
     _getData: function() {
     	var that = this;
-        window.console && console.log( this.date_picker.getValue() );
-    	this.pi_store = Ext.create('Rally.data.WsapiDataStore', {
-    		autoLoad: true,
-    		model: that.model,
-            filters: that._getFilters(),
-            sorters: [ { property: 'Rank', direction: 'ASC' } ],
-    		listeners: {
-    			load: function(store,data,success) {
-                    window.console && console.log( "load" );
-                    var records = store.getRecords();
-                    var running_total = 0;
-                    for ( var i=0; i<records.length; i++ ) {
-                        var record = records[i];
-                        var value = record.data[this.field_to_sum] || 0;
-                        running_total += value;
-                        record.data.RunningTotal = running_total;
-                    }
-                    
-    				this._addPIGrid();
-    			},
-                datachanged: function( store, opts ) {
-                    window.console && console.log( "datachanged" );
-                    var records = store.getRecords();
-                    var running_total = 0;
-                    for ( var i=0; i<records.length; i++ ) {
-                        var record = records[i];
-                        var value = record.data[this.field_to_sum] || 0;
-                        running_total += value;
-                        record.set( "RunningTotal", running_total);
-                    }
-                },
-    			scope: this
-    		},
-    		fetch: that._getFetchFields()
-    	});    
+        if ( this.date_picker ) {
+	        window.console && console.log( this.date_picker.getValue() );
+	    	this.pi_store = Ext.create('Rally.data.WsapiDataStore', {
+	    		autoLoad: true,
+	    		model: that.model,
+	            filters: that._getFilters(),
+	            sorters: [ { property: 'Rank', direction: 'ASC' } ],
+	    		listeners: {
+	    			load: function(store,data,success) {
+	                    window.console && console.log( "load" );
+	                    var records = store.getRecords();
+	                    var running_total = 0;
+	                    for ( var i=0; i<records.length; i++ ) {
+	                        var record = records[i];
+	                        var value = record.data[this.field_to_sum] || 0;
+	                        running_total += value;
+	                        record.data.RunningTotal = running_total;
+	                    }
+	                    
+	    				this._addPIGrid();
+	    			},
+	                datachanged: function( store, opts ) {
+	                    window.console && console.log( "datachanged" );
+	                    var records = store.getRecords();
+	                    var running_total = 0;
+	                    for ( var i=0; i<records.length; i++ ) {
+	                        var record = records[i];
+	                        var value = record.data[this.field_to_sum] || 0;
+	                        running_total += value;
+	                        record.set( "RunningTotal", running_total);
+	                    }
+	                },
+	    			scope: this
+	    		},
+	    		fetch: that._getFetchFields()
+	    	});    
+        }
 	},
     _addPIGrid: function() {
         window.console && console.log( "_addPIGrid" );
