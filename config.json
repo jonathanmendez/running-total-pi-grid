@@ -1,7 +1,7 @@
 {
     "name": "RunningTotal",
     "className": "CustomApp",
-    "server": "https://trial.rallydev.com",
+    "server": "https://demo01.rallydev.com",
     "sdk": "2.0p5",
     "javascript": [
         "field-edit-dialog.js",

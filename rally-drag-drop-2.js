@@ -52,13 +52,14 @@ Ext.define('Rally.ui.grid.plugin.DragDrop2', {
     },
 
     _setupViewScroll: function() {
+        window.console && console.log(2);
         var el = this.view.getEl();
 
         el.ddScrollConfig = {
-            vthresh: 10,
+            vthresh: 20,
             hthresh: -1,
-            frequency: 100,
-            increment: 75
+            frequency: 50,
+            increment: 500
         };
         Ext.dd.ScrollManager.register(el);
     },
@@ -125,9 +126,10 @@ Ext.define('Rally.ui.grid.plugin.DragDrop2', {
     },
 
     _showRankColumn: function() {
-        console.log( this.view.rendered );
-        if (!this.view.hasCls(this.rankEnabledCls)) {
-            this.view.addCls(this.rankEnabledCls);
+        if ( this.view && this.view !== null ) {
+	        if (!this.view.hasCls(this.rankEnabledCls)) {
+	            this.view.addCls(this.rankEnabledCls);
+	        }
         }
     },
 
@@ -194,6 +196,5 @@ Ext.define('Rally.ui.grid.plugin.DragDrop2', {
         this.view.ownerCt.setLoading(false);
         this.view.publish(Rally.Message.objectUpdate, record, this.view);
         Rally.ui.flair.FlairManager.hideAllFlairMessages();
-
     }
 });

@@ -29,7 +29,7 @@ Ext.define('CustomApp', {
     field_to_sum: 'FeatureEstimate',
     componentCls: 'app',
     items: [
-        { xtype: 'container', itemId: 'grid_box' },      
+        { xtype: 'container', itemId: 'grid_box', autoScroll: true },      
         { xtype: 'container',  
             layout: { 
                 type: 'hbox'
@@ -229,7 +229,7 @@ Ext.define('CustomApp', {
 	    				this._addPIGrid();
 	    			},
 	                datachanged: function( store, opts ) {
-	                    window.console && console.log( "datachanged" );
+	                    window.console && console.log( "data changed" );
 	                    var records = store.getRecords();
 	                    var running_total = 0;
 	                    for ( var i=0; i<records.length; i++ ) {
@@ -238,6 +238,7 @@ Ext.define('CustomApp', {
 	                        running_total += value;
 	                        record.set( "RunningTotal", running_total);
 	                    }
+                        window.console && console.log( "done data changed");
 	                },
 	    			scope: this
 	    		},
@@ -254,6 +255,7 @@ Ext.define('CustomApp', {
             } 
     		this.pi_grid = Ext.create( 'Rally.ui.grid.Grid', {
     			/*model: this.model,*/
+                autoScroll: true,
     			height: 475,
                 selType: 'checkboxmodel',
                 selModel: {

@@ -428,13 +428,14 @@
                 },
             
                 _setupViewScroll: function() {
+                    window.console && console.log(2);
                     var el = this.view.getEl();
             
                     el.ddScrollConfig = {
-                        vthresh: 10,
+                        vthresh: 20,
                         hthresh: -1,
-                        frequency: 100,
-                        increment: 75
+                        frequency: 50,
+                        increment: 500
                     };
                     Ext.dd.ScrollManager.register(el);
                 },
@@ -501,9 +502,10 @@
                 },
             
                 _showRankColumn: function() {
-                    console.log( this.view.rendered );
-                    if (!this.view.hasCls(this.rankEnabledCls)) {
-                        this.view.addCls(this.rankEnabledCls);
+                    if ( this.view && this.view !== null ) {
+            	        if (!this.view.hasCls(this.rankEnabledCls)) {
+            	            this.view.addCls(this.rankEnabledCls);
+            	        }
                     }
                 },
             
@@ -570,7 +572,6 @@
                     this.view.ownerCt.setLoading(false);
                     this.view.publish(Rally.Message.objectUpdate, record, this.view);
                     Rally.ui.flair.FlairManager.hideAllFlairMessages();
-            
                 }
             });
             /*global console, Ext */
@@ -604,7 +605,7 @@
                 field_to_sum: 'FeatureEstimate',
                 componentCls: 'app',
                 items: [
-                    { xtype: 'container', itemId: 'grid_box' },      
+                    { xtype: 'container', itemId: 'grid_box', autoScroll: true },      
                     { xtype: 'container',  
                         layout: { 
                             type: 'hbox'
@@ -804,7 +805,7 @@
             	    				this._addPIGrid();
             	    			},
             	                datachanged: function( store, opts ) {
-            	                    window.console && console.log( "datachanged" );
+            	                    window.console && console.log( "data changed" );
             	                    var records = store.getRecords();
             	                    var running_total = 0;
             	                    for ( var i=0; i<records.length; i++ ) {
@@ -813,6 +814,7 @@
             	                        running_total += value;
             	                        record.set( "RunningTotal", running_total);
             	                    }
+                                    window.console && console.log( "done data changed");
             	                },
             	    			scope: this
             	    		},
@@ -829,6 +831,7 @@
                         } 
                 		this.pi_grid = Ext.create( 'Rally.ui.grid.Grid', {
                 			/*model: this.model,*/
+                            autoScroll: true,
                 			height: 475,
                             selType: 'checkboxmodel',
                             selModel: {
