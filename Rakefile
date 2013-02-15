@@ -159,7 +159,7 @@ module Rally
 
       def initialize(config, app_filename)
         @config = config                      # source of truth
-        @server = config.server
+        @server = config.deploy_server
         @port = "443"                         # SSL default port
         @username = config.username
         @password =config.password
@@ -565,7 +565,7 @@ module Rally
       private
 
       def assure_deploy_directory_exists
-        mkdir DEPLOY_DIR unless  File.exists?(DEPLOY_DIR)
+        Dir.mkdir DEPLOY_DIR unless  File.exists?(DEPLOY_DIR)
       end
 
       def get_template_files

@@ -20,7 +20,7 @@ var renderRank = function(value, metaData, record, rowIndex, colIndex, store, vi
 var renderId = function(value, metaData, record, rowIndex, colIndex, store, view) {
     var item = record.getData();
     var url = Rally.util.Navigation.createRallyDetailUrl(item);
-    var formatted_string = "<a target='_top' href='/#" + url + "'>" + item.FormattedID + "</a>";
+    var formatted_string = "<a target='_top' href='" + url + "'>" + item.FormattedID + "</a>";
     return formatted_string;  
 };
 

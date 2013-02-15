@@ -529,6 +529,7 @@
                 },
             
                 _onBeforeDrag: function(dragData) {
+                    window.console && console.log( "_onBeforeDrag" );
                     if (!this._userDraggingRankCell(dragData.event)) {
                         return false;
                     }
@@ -553,6 +554,7 @@
                 },
             
                 _onDrop: function(rowEl, dropData, overModel, dropPosition, opts) {
+                    window.console && console.log( "_onDrop" );
                     var ranker = this._getRanker(),
                         rankConfig = {
                             recordToRank: dropData.records[0],
@@ -596,7 +598,7 @@
             var renderId = function(value, metaData, record, rowIndex, colIndex, store, view) {
                 var item = record.getData();
                 var url = Rally.util.Navigation.createRallyDetailUrl(item);
-                var formatted_string = "<a target='_top' href='/#" + url + "'>" + item.FormattedID + "</a>";
+                var formatted_string = "<a target='_top' href='" + url + "'>" + item.FormattedID + "</a>";
                 return formatted_string;  
             };
             

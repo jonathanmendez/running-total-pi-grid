@@ -121,6 +121,11 @@ Ext.define('Rally.ui.grid.plugin.DragDrop2', {
             top = dragDrop.initPageY - xy[1],
             padding = 3;
 
+        // remove any selection indicators
+        gridCmp.selModel.deselectAll();
+        window.console && console.log( "selection model", gridCmp.selModel );
+
+        
         dragDrop.setXConstraint(0, 0);
         dragDrop.setYConstraint(top, el.getHeight() - top - headerEl.getHeight() - padding);
     },
@@ -153,6 +158,8 @@ Ext.define('Rally.ui.grid.plugin.DragDrop2', {
     },
 
     _onBeforeDrag: function(dragData) {
+        window.console && console.log( "_onBeforeDrag", dragData );
+        dragData.view.selModel.deselectAll();
         if (!this._userDraggingRankCell(dragData.event)) {
             return false;
         }
@@ -177,6 +184,7 @@ Ext.define('Rally.ui.grid.plugin.DragDrop2', {
     },
 
     _onDrop: function(rowEl, dropData, overModel, dropPosition, opts) {
+        window.console && console.log( "_onDrop" );
         var ranker = this._getRanker(),
             rankConfig = {
                 recordToRank: dropData.records[0],
