@@ -10,13 +10,6 @@ Ext.define('PXSCellEdit',{
 	 * 
 	 */
     _onUiEvent: function(type, view, cell, rowIndex, cellIndex, e) {
-    	window.console && console.log( "_onUIEvent", type, rowIndex, cellIndex );
-    	window.console && console.log( "gridview", this.grid.getView() );
-    	window.console && console.log("record", this.grid.getView().getStore().getAt(rowIndex));
-    	window.console && console.log( "column?", this.grid.columns[cellIndex]);
-    	
-    	
-    	//window.console && console.log( "Editable? ", this.isCellEditable( {}, "" ));
     	if ( this.grid.columns[cellIndex] && this.grid.columns[cellIndex].editor ) {
 	        var cellEl = Ext.fly(cell);
 	        if (cellEl) {
@@ -40,10 +33,10 @@ Ext.define('PXSCellEdit',{
                 callback: function(records, operation) {
                     var success = operation.success;
                     if (success) {
-                        this.publish(Rally.Message.objectUpdate, records, this);
-                        this.publish(Rally.Message.recordUpdateSuccess, records);
+                        //this.publish(Rally.Message.objectUpdate, records, this);
+                        //this.publish(Rally.Message.recordUpdateSuccess, records);
                     } else {
-                        this.publish(Rally.Message.recordUpdateFailure);
+                        //this.publish(Rally.Message.recordUpdateFailure);
                     }
 
                     if(this.grid){

@@ -4,10 +4,11 @@
     "server": "https://demo01.rallydev.com",
     "sdk": "2.0p5",
     "javascript": [
+        "pxs-ranker.js",
         "pxs-cell-editing.js",
         "pxs-checkbox-column.js",
         "field-edit-dialog.js",
-        "rally-drag-drop-2.js",
+        "pxs-drag-drop.js",
         "App.js"
     ],
     "css": [

@@ -7,7 +7,50 @@
 
     <script type="text/javascript">
         Rally.onReady(function() {
-            Ext.define('PXSCellEdit',{
+            /*
+             * Same as ranker, but won't show the flair when done!
+             */
+            Ext.define('PXSRanker', {
+            	extend: 'Rally.data.Ranker',
+            	init: function() {
+            		this.callParent(arguments);
+            	},
+            	 /**
+                 * @param {Object} config Config object with the following parameters:
+                 *  recordToRank {Ext.data.Model} - the record being reranked
+                 *  relativeRecord {Ext.data.Model} - the record that recordToRank is being ranked before or after
+                 *  position {String} - the relative position ('before' or 'after')
+                 *  saveOptions {Object} - config object for {Ext.data.Operation}
+                 */
+                rankRelative: function(config) {
+                    var saveOptions = Ext.merge({}, config.saveOptions),
+                        rankParamName = this.relativeRankPrefix + (config.position === 'after' ? 'Below' : 'Above');
+            
+                    saveOptions.params = saveOptions.params || {};
+                    saveOptions.params[rankParamName] = config.relativeRecord.get('_ref');
+                    saveOptions.originalCallback = saveOptions.callback;
+                    saveOptions.callback = Ext.bind(this._rankRelativeCallback, this, [saveOptions], true);
+            
+                    /* Rally.ui.flair.FlairManager.showStatusFlair({message: 'Moving...'}); */
+                    config.recordToRank.save(saveOptions);
+                },
+            
+                _rankRelativeCallback: function(record, operation, saveOptions) {
+                    var formattedId = record.get('FormattedID'),
+                        name = record.get('Name'),
+                        recordText = '"' + (Ext.isEmpty(formattedId) ? '' : formattedId + ': ') + name + '"';
+            
+                    if (operation.success) {
+                        /*Rally.ui.flair.FlairManager.showFlair({message: Ext.String.format('{0} has been moved.', recordText)}); */
+                    } else {
+                        /*Rally.ui.flair.FlairManager.showErrorFlair({message: Ext.String.format('Error moving {0}.', recordText)}); */
+                    }
+            
+                    if (saveOptions.originalCallback) {
+                        saveOptions.originalCallback.call(saveOptions.scope || this, record, operation);
+                    }
+                }
+            });            Ext.define('PXSCellEdit',{
             	extend: 'Rally.ui.grid.plugin.CellEditing',
             	alias: 'plugin.pxscellediting',
             	init: function() {
@@ -19,13 +62,6 @@
             	 * 
             	 */
                 _onUiEvent: function(type, view, cell, rowIndex, cellIndex, e) {
-                	window.console && console.log( "_onUIEvent", type, rowIndex, cellIndex );
-                	window.console && console.log( "gridview", this.grid.getView() );
-                	window.console && console.log("record", this.grid.getView().getStore().getAt(rowIndex));
-                	window.console && console.log( "column?", this.grid.columns[cellIndex]);
-                	
-                	
-                	//window.console && console.log( "Editable? ", this.isCellEditable( {}, "" ));
                 	if ( this.grid.columns[cellIndex] && this.grid.columns[cellIndex].editor ) {
             	        var cellEl = Ext.fly(cell);
             	        if (cellEl) {
@@ -36,6 +72,43 @@
             	            }
             	        }
                 	}
+                },
+                _saveInlineEdit: function(editor, event) {
+                    if (Ext.Object.getSize(event.record.getChanges()) > 0) {
+                        var grid = this.grid,
+                            record = this.context.record,
+                            column = this.context.column;
+            
+                        grid.fireEvent('inlineEdit', this, editor, event);
+            
+                        event.record.save({
+                            callback: function(records, operation) {
+                                var success = operation.success;
+                                if (success) {
+                                    //this.publish(Rally.Message.objectUpdate, records, this);
+                                    //this.publish(Rally.Message.recordUpdateSuccess, records);
+                                } else {
+                                    //this.publish(Rally.Message.recordUpdateFailure);
+                                }
+            
+                                if(this.grid){
+                                    this.grid.fireEvent('inlineeditsaved', this, records, operation, record, column);
+                                    this._onPossibleGridHeightChange();
+                                    if(success){
+                                        Ext.each(records, function(record) {
+                                            this.grid.highlightRowForRecord(record);
+                                        }, this);
+                                    }
+                                }
+                            },
+                            scope: this,
+                            params: {
+                                fetch: grid.getAllFetchFields()
+                            }
+                        });
+                    }else{
+                        this._onPossibleGridHeightChange();
+                    }
                 }
             });            /**
              * A Header subclass which renders a checkbox in each column cell which toggles the truthiness of the associated data field on click.
@@ -304,151 +377,17 @@
                         ]
                     });
                 }
-             });            /**
-             * @private
-             * Plugin for grid drag and drop // hacked to change the responsiveness
+             });            /*
+             * An attempt to control the flair stuff
              */
-            Ext.define('Rally.ui.grid.plugin.DragDrop2', {
-                requires: ['Rally.data.Ranker', 'Rally.ui.grid.dragdrop.DragZone', 'Rally.ui.grid.dragdrop.DropZone'],
-                extend : 'Ext.grid.plugin.DragDrop',
-                alias : 'plugin.rallydragdrop2',
-            
-                rankEnabledCls: 'rank-enabled',
-            
-                clientMetrics: [
-                    {
-                        event: 'drop',
-                        defaultUserAction: 'artifact ranked by drag/drop'
-                    },
-                    {
-                        method: '_onInitDrag',
-                        defaultUserAction: 'artifact drag rank start'
-                    }
-                ],
-            
-                init: function(view) {
-                	window.console && console.log( "rdd2.init" );
-                    this.view = view;
-                    this.view.mon(this.view.getStore(), 'load', this._onStoreLoad, this);
-                    this.view.mon(this.view, 'drop', this._onDrop, this);
-                    this.view.headerCt.mon(this.view.headerCt, 'columnshow', this._setupRankColumn, this);
-                    this.callParent(arguments);
-                    this.enable();  // assuming we're starting ranked.  Data load isn't kicking this off!
-                },
-            
-                destroy: function() {
-                    Ext.dd.ScrollManager.unregister(this.view.getEl());
-                    this.callParent(arguments);
-                },
-            
-                enable: function() {
-                    this._showRankColumn();
-                    this.callParent(arguments);
-                },
-            
-                disable: function() {
-                    this._hideRankColumn();
-                    this.callParent(arguments);
-                },
-            
-                onViewRender: function() {
-                    this._setupViewScroll();
-                    this._setupRankColumn();
-                    this._enableDragDrop();
-                },
-            
-                _setupViewScroll: function() {
-                    window.console && console.log(2);
-                    var el = this.view.getEl();
-            
-                    el.ddScrollConfig = {
-                        vthresh: 20,
-                        hthresh: -1,
-                        frequency: 50,
-                        increment: 500
-                    };
-                    Ext.dd.ScrollManager.register(el);
-                },
-            
-                _setupRankColumn: function() {
-                    var rankCol = this._getRankColumn();
-                    if (rankCol) {
-                        var rankField = this._getRanker().rankField;
-                        rankCol.getSortParam = function() {return rankField;};
-                    }
-                },
-            
-                _enableDragDrop: function() {
-                    var _onBeforeDrag = Ext.bind(this._onBeforeDrag, this),
-                        onBeforeDrag = function() {
-                            if (this.callParent(arguments) === false || _onBeforeDrag.apply(this, arguments) === false) {
-                                return false;
-                            }
-                        };
-            
-                    this.dragZone = new Rally.ui.grid.dragdrop.DragZone({
-                        view: this.view,
-                        ddGroup: this.dragGroup || this.ddGroup,
-                        dragText: this.dragText,
-                        onBeforeDrag: onBeforeDrag
-                    });
-            
-                    this.dropZone = new Rally.ui.grid.dragdrop.DropZone({
-                        view: this.view,
-                        ddGroup: this.dropGroup || this.ddGroup
-                    });
-                },
-            
-                _getRankColumn: function() {
-                    var rankCol = this.view.headerCt.items.getAt(0);
-                    if (rankCol instanceof Rally.ui.grid.RankColumn) {
-                        return rankCol;
-                    }
-                    return null;
-                },
-            
-                _userDraggingRankCell: function(event) {
-                    var rankCol = this._getRankColumn();
-                    if (rankCol && event.getTarget('.' + rankCol.tdCls)) {
-                        return true;
-                    }
-                    return false;
-                },
-            
-                _setConstraints: function() {
-                    var dragDrop = this.dragZone;
-            
-                    dragDrop.setInitPosition();
-            
-                    var el = this.view.getEl(),
-                        gridCmp = Ext.ComponentQuery.query('#' + el.up('.rally-grid').id)[0],
-                        headerEl = gridCmp.headerCt.getEl(),
-                        xy = el.getXY(),
-                        top = dragDrop.initPageY - xy[1],
-                        padding = 3;
-            
-                    // remove any selection indicators
-                    gridCmp.selModel.deselectAll();
-                    window.console && console.log( "selection model", gridCmp.selModel );
-            
-                    
-                    dragDrop.setXConstraint(0, 0);
-                    dragDrop.setYConstraint(top, el.getHeight() - top - headerEl.getHeight() - padding);
-                },
-            
-                _showRankColumn: function() {
-                    if ( this.view && this.view !== null ) {
-            	        if (!this.view.hasCls(this.rankEnabledCls)) {
-            	            this.view.addCls(this.rankEnabledCls);
-            	        }
-                    }
-                },
-            
-                _hideRankColumn: function() {
-                    this.view.removeCls(this.rankEnabledCls);
-                },
-            
-                _getRanker: function() {
+            Ext.define('PXSDrag',{
+            	extend: 'Rally.ui.grid.plugin.DragDrop',
+            	requires: ['PXSRanker'],
+            	alias: 'plugin.pxsdragdrop',
+            	init: function() {
+            		this.callParent(arguments);
+            	},
+            	_getRanker: function() {
                     if (!this.ranker) {
                         var store = this.view.getStore(),
                             config = {store: store};
@@ -457,61 +396,12 @@
                             config.rankField = 'TaskIndex';
                             config.relativeRankPrefix = 'taskIndex';
                         }
-                        this.ranker = Ext.create('Rally.data.Ranker', config);
+                        this.ranker = Ext.create('PXSRanker', config);
                     }
             
                     return this.ranker;
-                },
-            
-                _onBeforeDrag: function(dragData) {
-                    window.console && console.log( "_onBeforeDrag", dragData );
-                    if (!this._userDraggingRankCell(dragData.event)) {
-                        return false;
-                    }
-            
-                    this._onInitDrag();
-                },
-            
-                _onInitDrag: function() {
-                    if (this.dropZone) {
-                        this.dropZone.onInitDrag(this.dragZone);
-                    }
-            
-                    this._setConstraints();
-                },
-            
-                _onStoreLoad: function() {
-                    if (this._getRanker().isRankable()) {
-                        this.enable();
-                    } else {
-                        this.disable();
-                    }
-                },
-            
-                _onDrop: function(rowEl, dropData, overModel, dropPosition, opts) {
-                    window.console && console.log( "_onDrop" );
-                    var ranker = this._getRanker(),
-                        rankConfig = {
-                            recordToRank: dropData.records[0],
-                            relativeRecord: overModel,
-                            position: dropPosition,
-                            saveOptions: {
-                                callback: this._onRank,
-                                scope: this
-                            }
-                        };
-            
-                    this.view.ownerCt.setLoading(true);
-                    ranker.rankRelative(rankConfig);
-                },
-            
-                _onRank: function(record, operation) {
-                    this.view.ownerCt.setLoading(false);
-                    this.view.publish(Rally.Message.objectUpdate, record, this.view);
-                    Rally.ui.flair.FlairManager.hideAllFlairMessages();
                 }
-            });
-            /*global console, Ext */
+            });            /*global console, Ext */
             var renderUSDate = function(value) {
                 var display_value = "";
                 if ( value ) {
@@ -782,7 +672,7 @@
                             },*/
                 			viewConfig: {
                 				plugins: [
-                					{ ptype: 'rallydragdrop2' }
+                					{ ptype: 'pxsdragdrop' }
                 				]
                 			},
                             plugins: [ { ptype: 'pxscellediting' } ],
