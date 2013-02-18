@@ -272,6 +272,9 @@ Ext.define('CustomApp', {
     					{ ptype: 'rallydragdrop2' }
     				]
     			},
+                editingConfig: {
+				    publishMessages: false
+				},
                 plugins: [ { ptype: 'pxscellediting' } ],
 	    		columnCfgs: this.columns,
 	    		store: this.pi_store

@@ -27,5 +27,42 @@ Ext.define('PXSCellEdit',{
 	            }
 	        }
     	}
+    },
+    _saveInlineEdit: function(editor, event) {
+        if (Ext.Object.getSize(event.record.getChanges()) > 0) {
+            var grid = this.grid,
+                record = this.context.record,
+                column = this.context.column;
+
+            grid.fireEvent('inlineEdit', this, editor, event);
+
+            event.record.save({
+                callback: function(records, operation) {
+                    var success = operation.success;
+                    if (success) {
+                        this.publish(Rally.Message.objectUpdate, records, this);
+                        this.publish(Rally.Message.recordUpdateSuccess, records);
+                    } else {
+                        this.publish(Rally.Message.recordUpdateFailure);
+                    }
+
+                    if(this.grid){
+                        this.grid.fireEvent('inlineeditsaved', this, records, operation, record, column);
+                        this._onPossibleGridHeightChange();
+                        if(success){
+                            Ext.each(records, function(record) {
+                                this.grid.highlightRowForRecord(record);
+                            }, this);
+                        }
+                    }
+                },
+                scope: this,
+                params: {
+                    fetch: grid.getAllFetchFields()
+                }
+            });
+        }else{
+            this._onPossibleGridHeightChange();
+        }
     }
 });
