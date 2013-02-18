@@ -4,8 +4,9 @@
     "server": "https://demo01.rallydev.com",
     "sdk": "2.0p5",
     "javascript": [
+        "pxs-cell-editing.js",
+        "pxs-checkbox-column.js",
         "field-edit-dialog.js",
-        "grid-plugin-cell-editing.js",
         "rally-drag-drop-2.js",
         "App.js"
     ],

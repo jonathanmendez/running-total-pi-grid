@@ -159,7 +159,6 @@ Ext.define('Rally.ui.grid.plugin.DragDrop2', {
 
     _onBeforeDrag: function(dragData) {
         window.console && console.log( "_onBeforeDrag", dragData );
-        dragData.view.selModel.deselectAll();
         if (!this._userDraggingRankCell(dragData.event)) {
             return false;
         }

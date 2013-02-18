@@ -3,13 +3,14 @@
 <head>
     <title>RunningTotal</title>
 
-    <script type="text/javascript" src="https://rally1.rallydev.com/apps/2.0p5/sdk-debug.js"></script>
+    <script type="text/javascript" src="https://demo01.rallydev.com/apps/2.0p5/sdk-debug.js"></script>
 
     <script type="text/javascript">
         Rally.onReady(function() {
             Rally.loadScripts([
+                "pxs-cell-editing.js",
+                "pxs-checkbox-column.js",
                 "field-edit-dialog.js",
-                "grid-plugin-cell-editing.js",
                 "rally-drag-drop-2.js",
                 "App.js"
             ], function() {

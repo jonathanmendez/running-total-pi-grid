@@ -42,7 +42,7 @@ Ext.define('CustomApp', {
                 { xtype: 'container', margin: 5, itemId: 'date_box'}
         ]}
     ],
-    selected_rows: [],
+    selected_rows: 0,
     launch: function() {
         window.console && console.log( "launch" );
         this._addDatePicker();
@@ -55,26 +55,27 @@ Ext.define('CustomApp', {
         var base_url = this.getContext().getWorkspace()._ref.replace(/slm[\w\W]*/,"");
         return base_url;
     },
-    _getGearColumn: function() {
-        var that = this;
-        var gear_config = {
-            xtype: 'actioncolumn',
-            width: 40,
-            cls: 'row-actions',
-            items: [{
-                icon: that._getBaseURL() + 'slm/js/rally/resources/images/gear/gear-active.png',
-                tooltip: 'Edit',
-                handler: function( grid, rowIndex, colIndex) {
-                    console.log( grid );
-                }
-            }]
-        };
-        return gear_config;
-    },
     _setColumns: function() {
+        var that = this;
         this.columns = [
 	        { xtype: 'rallyrankcolumn', sortable: false },
-            /*this._getGearColumn(),*/
+            { xtype: 'pxscheckcolumn', text: '&nbsp;', dataIndex: '_Selected', width: 40,
+                listeners: { 
+                    checkchange: function(cc, ri, c ) {
+                        if ( c ) {
+                            that.selected_rows++;
+                        } else {
+                            that.selected_rows--;
+                        }
+                        if ( that.selected_rows > 0 ) {
+                            that.edit_button.enable();
+                        } else {
+                            that.edit_button.disable();
+                            that.selected_rows = 0;
+                        }
+                    }
+                }
+            },
             { text: ' ', dataIndex: 'Rank', width: 45, renderer: renderRank, sortable: false },
 	        { text: 'ID', dataIndex: 'FormattedID', width: 50, renderer: renderId, sortable: false },
 	        { text: 'Name', dataIndex: 'Name', editor: 'rallytextfield', flex: 2.5, sortable: false },
@@ -128,10 +129,14 @@ Ext.define('CustomApp', {
 						    saveLabel: 'Save',
 						    saveFn: function(dialog, selectedField, newValue) {
                                 that.edit_button.disable();
-                                Ext.Array.each( that.selected_rows, function( row ) {
-                                    console.log( row, selectedField, newValue );
-		                            row.set(selectedField, newValue);
-		                            row.save();
+                                Ext.Array.each( that.pi_store.getRecords(), function( record ) {
+                                    if ( record.get("_Selected")) {
+                                        window.console && console.log( "Setting ", selectedField, " to ", newValue, " for ", record.get("FormattedID"));
+                                        record.set(selectedField, newValue);
+                                        record.set("_Selected", false );
+                                        record.save();
+                                    }
+		                            
 		                        });
                                 that.pi_grid.getSelectionModel().deselectAll();
 						    }
@@ -224,6 +229,7 @@ Ext.define('CustomApp', {
 	                        var value = record.data[this.field_to_sum] || 0;
 	                        running_total += value;
 	                        record.data.RunningTotal = running_total;
+                            record.data._Selected = false;
 	                    }
 	                    
 	    				this._addPIGrid();
@@ -254,31 +260,19 @@ Ext.define('CustomApp', {
                 this.pi_grid.destroy();
             } 
     		this.pi_grid = Ext.create( 'Rally.ui.grid.Grid', {
-    			/*model: this.model,*/
                 autoScroll: true,
     			height: 475,
-                selType: 'checkboxmodel',
+                enableEditing: false, /* cell editing puts the class on every column whether editable or not!*/
+               /* selType: 'rallyrowmodel',
                 selModel: {
-                    injectCheckbox: 1,
-                    mode: 'SIMPLE',
-                    listeners: {
-                        selectionchange: function( model, selected ) {
-                            this.selected_rows = selected;
-                            if ( selected.length === 0 ) {
-                                this.edit_button.disable();
-                            } else {
-                                this.edit_button.enable();
-                            }
-                        },
-                        scope: this
-                    }
-                },
-    			/*enableRanking: true,*/
+                    selType: 'rallyrowmodel'
+                },*/
     			viewConfig: {
     				plugins: [
     					{ ptype: 'rallydragdrop2' }
     				]
     			},
+                plugins: [ { ptype: 'pxscellediting' } ],
 	    		columnCfgs: this.columns,
 	    		store: this.pi_store
     		});
@@ -292,10 +286,10 @@ Ext.define('CustomApp', {
             { text: 'ID', dataIndex: 'FormattedID', width: 50 },
             { text: 'Name', dataIndex: 'Name', editor: 'rallytextfield', flex: 2 },
             { text: 'Running Total', dataIndex: 'RunningTotal' },
-            { text: 'Feature Estimate', dataIndex: 'FeatureEstimate', editor: 'rallynumberfield' },
-            { text: 'Planned Start', dataIndex: 'PlannedStartDate', editor: 'rallydatefield', renderer: renderUSDate },
-            { text: 'Planned End', dataIndex: 'PlannedEndDate', editor: 'rallydatefield', renderer: renderUSDate },
-            { text: 'State', dataIndex: 'State', editor: this._getStateEditor(), renderer: renderFieldName },
+            { text: 'Feature Estimate', dataIndex: 'FeatureEstimate' },
+            { text: 'Planned Start', dataIndex: 'PlannedStartDate', renderer: renderUSDate },
+            { text: 'Planned End', dataIndex: 'PlannedEndDate', renderer: renderUSDate },
+            { text: 'State', dataIndex: 'State',  renderer: renderFieldName },
             { text: 'Owner', dataIndex: 'Owner', renderer: renderFieldName },
             { text: 'Parent', dataIndex: 'Parent', renderer: renderFieldName }
         ];

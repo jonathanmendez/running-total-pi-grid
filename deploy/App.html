@@ -7,7 +7,160 @@
 
     <script type="text/javascript">
         Rally.onReady(function() {
-            /*
+            Ext.define('PXSCellEdit',{
+            	extend: 'Rally.ui.grid.plugin.CellEditing',
+            	alias: 'plugin.pxscellediting',
+            	init: function() {
+            		this.callParent(arguments);
+            	},
+            	/* 
+            	 * at some point, the base plugin started putting the rally-edit-cell-over 
+            	 * class on the cell whether it was editable or not
+            	 * 
+            	 */
+                _onUiEvent: function(type, view, cell, rowIndex, cellIndex, e) {
+                	window.console && console.log( "_onUIEvent", type, rowIndex, cellIndex );
+                	window.console && console.log( "gridview", this.grid.getView() );
+                	window.console && console.log("record", this.grid.getView().getStore().getAt(rowIndex));
+                	window.console && console.log( "column?", this.grid.columns[cellIndex]);
+                	
+                	
+                	//window.console && console.log( "Editable? ", this.isCellEditable( {}, "" ));
+                	if ( this.grid.columns[cellIndex] && this.grid.columns[cellIndex].editor ) {
+            	        var cellEl = Ext.fly(cell);
+            	        if (cellEl) {
+            	            if (type === 'mouseover') {
+            	                cellEl.addCls('rally-edit-cell-over');
+            	            } else if (type === 'mouseout') {
+            	                cellEl.removeCls('rally-edit-cell-over');
+            	            }
+            	        }
+                	}
+                }
+            });            /**
+             * A Header subclass which renders a checkbox in each column cell which toggles the truthiness of the associated data field on click.
+             *
+             * Because Rally isn't providing the ux options, I stole this from here (and modified it):
+             * 
+             * http://docs.sencha.com/ext-js/4-1/#!/api/Ext.ux.CheckColumn
+             * 
+             * Example usage:
+             * 
+             *    // create the grid
+             *    var grid = Ext.create('Ext.grid.Panel', {
+             *        ...
+             *        columns: [{
+             *           text: 'Foo',
+             *           ...
+             *        },{
+             *           xtype: 'checkcolumn',
+             *           text: 'Indoor?',
+             *           dataIndex: 'indoor',
+             *           width: 55
+             *        }]
+             *        ...
+             *    });
+             *
+             * In addition to toggling a Boolean value within the record data, this
+             * class adds or removes a css class <tt>'rally-grid-checked'</tt> on the td
+             * based on whether or not it is checked to alter the background image used
+             * for a column.
+             */
+            Ext.define('PXSCheckColumn', {
+                extend: 'Ext.grid.column.Column',
+                alias: 'widget.pxscheckcolumn',
+            
+                /**
+                 * @cfg {Boolean} [stopSelection=true]
+                 * Prevent grid selection upon mousedown.
+                 */
+                stopSelection: true,
+            
+                tdCls: Ext.baseCSSPrefix + 'grid-cell-checkcolumn',
+            
+                constructor: function() {
+                    this.addEvents(
+                        /**
+                         * @event beforecheckchange
+                         * Fires when before checked state of a row changes.
+                         * The change may be vetoed by returning `false` from a listener.
+                         * @param {Ext.ux.CheckColumn} this CheckColumn
+                         * @param {Number} rowIndex The row index
+                         * @param {Boolean} checked True if the box is to be checked
+                         */
+                        'beforecheckchange',
+                        /**
+                         * @event checkchange
+                         * Fires when the checked state of a row changes
+                         * @param {Ext.ux.CheckColumn} this CheckColumn
+                         * @param {Number} rowIndex The row index
+                         * @param {Boolean} checked True if the box is now checked
+                         */
+                        'checkchange'
+                    );
+                    this.callParent(arguments);
+                },
+            
+                /**
+                 * @private
+                 * Process and refire events routed from the GridView's processEvent method.
+                 */
+                processEvent: function(type, view, cell, recordIndex, cellIndex, e, record, row) {
+                    var me = this,
+                        key = type === 'keydown' && e.getKey(),
+                        mousedown = type == 'mousedown';
+            
+                    if (mousedown || (key == e.ENTER || key == e.SPACE)) {
+                        var dataIndex = me.dataIndex,
+                            checked = !record.get(dataIndex);
+            
+                        // Allow apps to hook beforecheckchange
+                        if (me.fireEvent('beforecheckchange', me, recordIndex, checked) !== false) {
+                            record.set(dataIndex, checked);
+                            me.fireEvent('checkchange', me, recordIndex, checked);
+            
+                            // Mousedown on the now nonexistent cell causes the view to blur, so stop it continuing.
+                            if (mousedown) {
+                                e.stopEvent();
+                            }
+            
+                            // Selection will not proceed after this because of the DOM update caused by the record modification
+                            // Invoke the SelectionModel unless configured not to do so
+                            if (!me.stopSelection) {
+                                view.selModel.selectByPosition({
+                                    row: recordIndex,
+                                    column: cellIndex
+                                });
+                            }
+            
+                            // Prevent the view from propagating the event to the selection model - we have done that job.
+                            return false;
+                        } else {
+                            // Prevent the view from propagating the event to the selection model if configured to do so.
+                            return !me.stopSelection;
+                        }
+                    } else {
+                        return me.callParent(arguments);
+                    }
+                },
+            
+                // Note: class names are not placed on the prototype bc renderer scope
+                // is not in the header.
+                renderer : function(value){
+                    //window.console && console.log("renderer", value);
+                    
+                    var cssPrefix = Ext.baseCSSPrefix,
+                        cls = ['pxs-grid-checker'];
+                        //cls = [cssPrefix + 'grid-checkheader'];            
+                        
+                    if (value) {
+                        //cls.push(cssPrefix + 'grid-checkheader-checked');
+                        cls.unshift('pxs-grid-checked');
+                        
+                    }
+                    return '<div class="' + cls.join(' ') + '">&#160;</div>';
+                }
+            });            /*
              * A dialog that allows the user to pick a field and a value
              * 
              * @example
@@ -152,229 +305,6 @@
                     });
                 }
              });            /**
-             * Temporary hack to remove publishing message so that editing in-line 
-             * doesn't refresh the whole app
-             * 
-             * AND to stick in pencil (the editing hover over only on editable fields)
-             */
-            
-            /**
-             * @private
-             * Plugin for grid cell editing
-             */
-            Ext.define('Rally.ui.grid.plugin.CellEditing', {
-                requires: ['Rally.ui.grid.OwnerEditor'],
-                extend: 'Ext.grid.plugin.CellEditing',
-                alias: 'plugin.rallycellediting',
-            
-                mixins: {
-                    messageable: 'Rally.Messageable'
-                },
-            
-                triggerEvent: 'triggeredit',
-            
-                //=============================
-                // Private method override danger zone
-                //
-                onEnterKey: Ext.emptyFn,
-            
-                onEscKey: function() {
-                    this.callParent(arguments);
-            
-                    //Need to return true to prevent underlying key map
-                    //from stopping the escape key event in case other components need to handle it
-                    return true;
-                },
-            
-                //
-                // End private method override danger zone
-                //=============================
-            
-                /**
-                 * @event recordupdatesuccess
-                 * Publishes the global {@link Rally.Message#recordUpdateSuccess} message when a record
-                 * is successfully updated via inline-editing
-                 * @param {Object[]} records The updated records
-                 */
-                /**
-                 * @event recordupdatefailure
-                 * Publishes the global {@link Rally.Message#recordUpdateFailure} message when a record
-                 * is unsuccessfully updated via inline-editing
-                 */
-            
-                init: function() {
-                    this.callParent(arguments);
-            
-                    this.grid.addEvents(
-                            /**
-                             * @event
-                             * Fires after an inline edit occurs
-                             * @param {Rally.ui.grid.Grid} this
-                             * @param {Ext.grid.plugin.Editing} editor The editor object from Ext.grid.plugin.CellEditing#edit
-                             * @param {Object} event The e object from Ext.grid.plugin.CellEditing#edit
-                             */
-                            'inlineEdit',
-                            /**
-                             * @event
-                             * Fires when an inline edit has been saved
-                             * @param {Rally.ui.grid.Grid} this
-                             * @param {Ext.data.Model[]} records The records array from Ext.data.Operation#callback
-                             * @param {Ext.data.Operation} operation See Ext.data.Operation#callback
-                             * @param {Ext.data.Model} record The original record that was updated
-                             * @param {Ext.grid.column.Column) The column that was updated
-                             */
-                            'inlineEditSaved'
-                    );
-                    
-                    this.mon(this.grid, 'edit', this._saveInlineEdit, this);
-                    this.mon(this.grid.getView(), 'uievent', this._onUiEvent, this);
-                    this.mon(this.grid, 'beforeedit', this._onBeforeEdit, this);
-                },
-            
-                getEditor: function(record, column) {
-                    var editor = this.callParent(arguments);
-                    editor.completeOnEnter = false;
-                    return editor;
-                },
-            
-                showEditor: function(ed, context, value) {
-                    this._onPossibleGridHeightChange();
-            
-                    if (Ext.isFunction(ed.prepareEditor)) {
-                        var superclassShowEditorFn = Ext.bind(this.superclass.showEditor, this, [ed, context, value]);
-                        ed.prepareEditor(context, superclassShowEditorFn);
-                    } else {
-                        this.callParent(arguments);
-                    }
-            
-                },
-            
-                onSpecialKey: function(editor, field, event) {
-                    var keyCode = event.getKey(),
-                        sm;
-            
-                    if (keyCode === event.ENTER && !editor.completeOnEnter) {
-                        event.stopEvent();
-                        this._preventExtFromDeferringOnBlur(field, editor);
-            
-                        sm = this.grid.getSelectionModel();
-                        sm.onEditorEnter(this, field, event);
-                    }
-            
-                    this.callParent(arguments);
-                },
-            
-                cancelEdit: function() {
-                    var isEditorActive = this.getActiveEditor();
-                    this.callParent(arguments);
-                    if (isEditorActive) {
-                        this._onPossibleGridHeightChange();
-                    }
-                },
-            
-                _saveInlineEdit: function(editor, event) {
-                    if (Ext.Object.getSize(event.record.getChanges()) > 0) {
-                        var grid = this.grid,
-                            record = this.context.record,
-                            column = this.context.column;
-            
-                        grid.fireEvent('inlineEdit', this, editor, event);
-            
-                        event.record.save({
-                            callback: function(records, operation) {
-                                var success = operation.success;
-                                if (success) {
-            //                        this.publish(Rally.Message.objectUpdate, records, this);
-            //                        this.publish(Rally.Message.recordUpdateSuccess, records);
-                                } else {
-                                    this.publish(Rally.Message.recordUpdateFailure);
-                                }
-            
-                                if(this.grid){
-                                    this.grid.fireEvent('inlineeditsaved', this, records, operation, record, column);
-                                    this._onPossibleGridHeightChange();
-                                    if(success){
-                                        Ext.each(records, function(record) {
-                                            this.grid.highlightRowForRecord(record);
-                                        }, this);
-                                    }
-                                }
-                            },
-                            scope: this,
-                            params: {
-                                fetch: grid.getAllFetchFields()
-                            }
-                        });
-                    }else{
-                        this._onPossibleGridHeightChange();
-                    }
-                },
-            
-                _onPossibleGridHeightChange: function(){
-                    this.grid.doLayout();
-                },
-            
-                _isEditableCell: function( view, cellIndex ) {
-                	var columns = view.getGridColumns();
-                	var result = false;
-                	if ( columns[cellIndex].editor ) {
-                		result = true;
-                	}
-                	return result;
-                },
-                _onUiEvent: function(type, view, cell, rowIndex, cellIndex, e) {
-                    var cellEl = Ext.fly(cell);
-                    if (cellEl) {
-                    	console.log(  );
-                    	if (this._isEditableCell(view, cellIndex) ) {
-            	            if (type === 'mouseover') {
-            	                cellEl.addCls('rally-edit-cell-over');
-            	            } else if (type === 'mouseout') {
-            	                cellEl.removeCls('rally-edit-cell-over');
-            	            }
-                    	}
-                    }
-                },
-            
-                _onBeforeEdit: function(editor, object, eOpts) {
-                    var cell = editor.grid.getView().getCell(object.record, object.column),
-                        cellEl = Ext.fly(cell);
-                    if (cellEl) {
-                        cellEl.removeCls('rally-edit-cell-over');
-                    }
-                },
-            
-                _preventExtFromDeferringOnBlur: function (field, editor) {
-                    // Ext defers the handling of the onBlur event by 10 milliseconds for fields
-                    // inside of editors. This is breaking our own grid keyboard navigation when
-                    // pressing enter to go to the next row. So we need to use the base onBlur
-                    // method (because it is not deferred) just for our enter key handling. We
-                    // put back the original ext onBlur handler once we are done.
-                    var focusEl = field.getFocusEl(),
-                        nonDeferredOnBlur = function() {
-                            Ext.AbstractComponent.prototype.onBlur.call(field);
-                            focusEl.on('blur', field.onBlur, field);
-                        },
-                        nonDeferredFieldBlur = function(x, event) {
-                            editor.onFieldBlur.apply(editor, [field, event]);
-                            editor.mon(field, {
-                                blur: {
-                                    fn: editor.onFieldBlur,
-                                    delay: 1
-                                },
-                                scope: editor
-                            });
-                        };
-            
-                    // unregister the handlers that have delays and then register
-                    // handlers that doesn't have the delay
-                    focusEl.un('blur', field.onBlur, field);
-                    this.mon(focusEl, 'blur', nonDeferredOnBlur, field, {single:true});
-            
-                    editor.mun(field, 'blur', editor.onFieldBlur, editor);
-                    editor.mon(field, 'blur', nonDeferredFieldBlur, editor, {single: true});
-                }
-            });            /**
              * @private
              * Plugin for grid drag and drop // hacked to change the responsiveness
              */
@@ -497,6 +427,11 @@
                         top = dragDrop.initPageY - xy[1],
                         padding = 3;
             
+                    // remove any selection indicators
+                    gridCmp.selModel.deselectAll();
+                    window.console && console.log( "selection model", gridCmp.selModel );
+            
+                    
                     dragDrop.setXConstraint(0, 0);
                     dragDrop.setYConstraint(top, el.getHeight() - top - headerEl.getHeight() - padding);
                 },
@@ -529,7 +464,7 @@
                 },
             
                 _onBeforeDrag: function(dragData) {
-                    window.console && console.log( "_onBeforeDrag" );
+                    window.console && console.log( "_onBeforeDrag", dragData );
                     if (!this._userDraggingRankCell(dragData.event)) {
                         return false;
                     }
@@ -620,7 +555,7 @@
                             { xtype: 'container', margin: 5, itemId: 'date_box'}
                     ]}
                 ],
-                selected_rows: [],
+                selected_rows: 0,
                 launch: function() {
                     window.console && console.log( "launch" );
                     this._addDatePicker();
@@ -633,26 +568,27 @@
                     var base_url = this.getContext().getWorkspace()._ref.replace(/slm[\w\W]*/,"");
                     return base_url;
                 },
-                _getGearColumn: function() {
-                    var that = this;
-                    var gear_config = {
-                        xtype: 'actioncolumn',
-                        width: 40,
-                        cls: 'row-actions',
-                        items: [{
-                            icon: that._getBaseURL() + 'slm/js/rally/resources/images/gear/gear-active.png',
-                            tooltip: 'Edit',
-                            handler: function( grid, rowIndex, colIndex) {
-                                console.log( grid );
-                            }
-                        }]
-                    };
-                    return gear_config;
-                },
                 _setColumns: function() {
+                    var that = this;
                     this.columns = [
             	        { xtype: 'rallyrankcolumn', sortable: false },
-                        /*this._getGearColumn(),*/
+                        { xtype: 'pxscheckcolumn', text: '&nbsp;', dataIndex: '_Selected', width: 40,
+                            listeners: { 
+                                checkchange: function(cc, ri, c ) {
+                                    if ( c ) {
+                                        that.selected_rows++;
+                                    } else {
+                                        that.selected_rows--;
+                                    }
+                                    if ( that.selected_rows > 0 ) {
+                                        that.edit_button.enable();
+                                    } else {
+                                        that.edit_button.disable();
+                                        that.selected_rows = 0;
+                                    }
+                                }
+                            }
+                        },
                         { text: ' ', dataIndex: 'Rank', width: 45, renderer: renderRank, sortable: false },
             	        { text: 'ID', dataIndex: 'FormattedID', width: 50, renderer: renderId, sortable: false },
             	        { text: 'Name', dataIndex: 'Name', editor: 'rallytextfield', flex: 2.5, sortable: false },
@@ -706,10 +642,14 @@
             						    saveLabel: 'Save',
             						    saveFn: function(dialog, selectedField, newValue) {
                                             that.edit_button.disable();
-                                            Ext.Array.each( that.selected_rows, function( row ) {
-                                                console.log( row, selectedField, newValue );
-            		                            row.set(selectedField, newValue);
-            		                            row.save();
+                                            Ext.Array.each( that.pi_store.getRecords(), function( record ) {
+                                                if ( record.get("_Selected")) {
+                                                    window.console && console.log( "Setting ", selectedField, " to ", newValue, " for ", record.get("FormattedID"));
+                                                    record.set(selectedField, newValue);
+                                                    record.set("_Selected", false );
+                                                    record.save();
+                                                }
+            		                            
             		                        });
                                             that.pi_grid.getSelectionModel().deselectAll();
             						    }
@@ -802,6 +742,7 @@
             	                        var value = record.data[this.field_to_sum] || 0;
             	                        running_total += value;
             	                        record.data.RunningTotal = running_total;
+                                        record.data._Selected = false;
             	                    }
             	                    
             	    				this._addPIGrid();
@@ -832,31 +773,19 @@
                             this.pi_grid.destroy();
                         } 
                 		this.pi_grid = Ext.create( 'Rally.ui.grid.Grid', {
-                			/*model: this.model,*/
                             autoScroll: true,
                 			height: 475,
-                            selType: 'checkboxmodel',
+                            enableEditing: false, /* cell editing puts the class on every column whether editable or not!*/
+                           /* selType: 'rallyrowmodel',
                             selModel: {
-                                injectCheckbox: 1,
-                                mode: 'SIMPLE',
-                                listeners: {
-                                    selectionchange: function( model, selected ) {
-                                        this.selected_rows = selected;
-                                        if ( selected.length === 0 ) {
-                                            this.edit_button.disable();
-                                        } else {
-                                            this.edit_button.enable();
-                                        }
-                                    },
-                                    scope: this
-                                }
-                            },
-                			/*enableRanking: true,*/
+                                selType: 'rallyrowmodel'
+                            },*/
                 			viewConfig: {
                 				plugins: [
                 					{ ptype: 'rallydragdrop2' }
                 				]
                 			},
+                            plugins: [ { ptype: 'pxscellediting' } ],
             	    		columnCfgs: this.columns,
             	    		store: this.pi_store
                 		});
@@ -870,10 +799,10 @@
                         { text: 'ID', dataIndex: 'FormattedID', width: 50 },
                         { text: 'Name', dataIndex: 'Name', editor: 'rallytextfield', flex: 2 },
                         { text: 'Running Total', dataIndex: 'RunningTotal' },
-                        { text: 'Feature Estimate', dataIndex: 'FeatureEstimate', editor: 'rallynumberfield' },
-                        { text: 'Planned Start', dataIndex: 'PlannedStartDate', editor: 'rallydatefield', renderer: renderUSDate },
-                        { text: 'Planned End', dataIndex: 'PlannedEndDate', editor: 'rallydatefield', renderer: renderUSDate },
-                        { text: 'State', dataIndex: 'State', editor: this._getStateEditor(), renderer: renderFieldName },
+                        { text: 'Feature Estimate', dataIndex: 'FeatureEstimate' },
+                        { text: 'Planned Start', dataIndex: 'PlannedStartDate', renderer: renderUSDate },
+                        { text: 'Planned End', dataIndex: 'PlannedEndDate', renderer: renderUSDate },
+                        { text: 'State', dataIndex: 'State',  renderer: renderFieldName },
                         { text: 'Owner', dataIndex: 'Owner', renderer: renderFieldName },
                         { text: 'Parent', dataIndex: 'Parent', renderer: renderFieldName }
                     ];
@@ -967,6 +896,18 @@
         	background-image: url('/slm/js/rally/resources/images/editIcon.png');
         	background-position: right 2px;
         	background-repeat: no-repeat;
+        }
+        
+        .pxs-grid-checker {
+        	background-repeat: no-repeat;
+        	background-position:center;
+        	background-image: url('/apps/2.0p5/ext/4.1.1/resources/themes/images/default/grid/unchecked.gif');
+        }
+        
+        .pxs-grid-checked {
+        	background-repeat: no-repeat;
+        	background-position:center;
+        	background-image: url('/apps/2.0p5/ext/4.1.1/resources/themes/images/default/grid/checked.gif');
         }    </style>
 </head>
 <body></body>
