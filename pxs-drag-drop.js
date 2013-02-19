@@ -7,7 +7,27 @@ Ext.define('PXSDrag',{
 	alias: 'plugin.pxsdragdrop',
 	init: function() {
 		this.callParent(arguments);
+		this.enable();  // assuming we're starting ranked.  Data load isn't kicking this off!
 	},
+	/* not sure why the thumbs are failing without this */
+    _showRankColumn: function() {
+        if ( this.view && this.view !== null ) {
+	        if (!this.view.hasCls(this.rankEnabledCls)) {
+	            this.view.addCls(this.rankEnabledCls);
+	        }
+        }
+    },
+    _setupViewScroll: function() {
+        var el = this.view.getEl();
+
+        el.ddScrollConfig = {
+            vthresh: 20,
+            hthresh: -1,
+            frequency: 50,
+            increment: 500
+        };
+        Ext.dd.ScrollManager.register(el);
+    },
 	_getRanker: function() {
         if (!this.ranker) {
             var store = this.view.getStore(),
