@@ -8,6 +8,20 @@
     <script type="text/javascript">
         Rally.onReady(function() {
             /*
+             * Overriding the _setOpacity because the IE workaround is breaking
+             */
+            Ext.override(Rally.ui.grid.dragdrop.DragDropRowProxy,{
+                
+                _setOpacity: function(trEl, opacity) {
+                    trEl.setOpacity(opacity);
+                    if (Ext.isIE) {
+                        /*trEl.query('td').each(function(tdDom) {
+                            Ext.fly(tdDom).setOpacity(opacity);
+                        });*/
+                    }
+                }
+            });
+            /*
              * Same as ranker, but won't show the flair when done!
              */
             Ext.define('PXSRanker', {
