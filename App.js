@@ -41,7 +41,6 @@ Ext.define('CustomApp', {
             }, 
             items: [ 
                 { xtype: 'container', margin: 5, layout: { type: 'hbox' }, items: [
-		            { xtype: 'container', margin: 5, itemId: 'edit_box' },
 		            { xtype: 'container', margin: 5, itemId: 'print_box' } 
                 ]},
                 { xtype: 'container', margin: 5, itemId: 'date_box'}
@@ -51,7 +50,6 @@ Ext.define('CustomApp', {
     launch: function() {
         window.console && console.log( "launch" );
         this._addDatePicker();
-        this._addEditButton();
         this._addPrintButton();
         this._setColumns();
     	this._getPIModel();
@@ -64,24 +62,7 @@ Ext.define('CustomApp', {
         var that = this;
         this.columns = [
 	        { xtype: 'rallyrankcolumn', sortable: false },
-            { xtype: 'pxscheckcolumn', sortable: false, text: '&nbsp;', dataIndex: '_Selected', width: 40,
-                listeners: { 
-                    checkchange: function(cc, ri, c ) {
-                        if ( c ) {
-                            that.selected_rows++;
-                        } else {
-                            that.selected_rows--;
-                        }
-                        if ( that.selected_rows > 0 ) {
-                            that.edit_button.enable();
-                        } else {
-                            that.edit_button.disable();
-                            that.selected_rows = 0;
-                        }
-                    }
-                }
-            },
-            { text: ' ', dataIndex: 'Rank', width: 45, renderer: renderRank, sortable: false },
+          { text: ' ', dataIndex: 'Rank', width: 45, renderer: renderRank, sortable: false },
 	        { text: 'ID', dataIndex: 'FormattedID', width: 50, renderer: renderId, sortable: false },
 	        { text: 'Name', dataIndex: 'Name', editor: 'rallytextfield', flex: 2.5, sortable: false },
 	        { text: 'Running Total', dataIndex: 'RunningTotal', flex: 0.5, sortable: false  },
@@ -109,49 +90,6 @@ Ext.define('CustomApp', {
             }
         } );
         this.down("#date_box").add(this.date_picker);
-    },
-    _addEditButton: function() {
-        window.console && console.log( "_addEditButton" );
-        var that = this;
-        this.edit_button = Ext.create('Rally.ui.Button', {
-            text: '',
-            icon: '/slm/images/icon_edit_view.gif',
-            disabled: true,
-            listeners: {
-                click: {
-                    fn: function(){ 
-                        window.console && console.log( "click edit button", this.selected_rows);
-                        var that = this;
-                        Ext.create('Rally.pxs.dialog.FieldEditDialog', {
-						    fieldCfgs: [ 
-                                { label: 'PlannedStartDate', editor: 'rallydatefield' },
-                                { label: 'PlannedEndDate', editor: 'rallydatefield' },
-                                { label: 'State', editor: that._getStateEditor() },
-                                { label: 'Owner', editor: { xtype: 'rallyusercombobox', project: this.getContext().getProject() } }
-                            ],
-						    saveLabel: 'Save',
-						    saveFn: function(dialog, selectedField, newValue) {
-                                that.edit_button.disable();
-                                Ext.Array.each( that.pi_store.getRecords(), function( record ) {
-                                    if ( record.get("_Selected")) {
-                                        window.console && console.log( "Setting ", selectedField, " to ", newValue, " for ", record.get("FormattedID"));
-                                        record.set(selectedField, newValue);
-                                        record.set("_Selected", false );
-                                        record.save();
-                                    }
-		                            
-		                        });
-                                that.pi_grid.getSelectionModel().deselectAll();
-						    }
-                        }).show();
-
-                    },
-                    scope: this
-                }
-            }
-        });
-        
-        this.down('#edit_box').add(this.edit_button);
     },
     _addPrintButton: function() {
         window.console && console.log( "_addPrintButton" );
