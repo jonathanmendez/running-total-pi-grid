@@ -172,7 +172,7 @@ Ext.define('CustomApp', {
             } 
     		this.pi_grid = Ext.create( 'Rally.ui.grid.Grid', {
                 autoScroll: true,
-    			height: 475,
+    			height: 675,
                 enableEditing: false, /* cell editing puts the class on every column whether editable or not!*/
                /* selType: 'rallyrowmodel',
                 selModel: {

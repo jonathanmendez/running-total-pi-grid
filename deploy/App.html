@@ -486,7 +486,7 @@
                         } 
                 		this.pi_grid = Ext.create( 'Rally.ui.grid.Grid', {
                             autoScroll: true,
-                			height: 475,
+                			height: 675,
                             enableEditing: false, /* cell editing puts the class on every column whether editable or not!*/
                            /* selType: 'rallyrowmodel',
                             selModel: {
@@ -507,17 +507,6 @@
                 _print: function() {
                     var that = this;
                     
-                    var cols = [
-                        { text: 'ID', dataIndex: 'FormattedID', width: 50 },
-                        { text: 'Name', dataIndex: 'Name', editor: 'rallytextfield', flex: 2 },
-                        { text: 'Running Total', dataIndex: 'RunningTotal' },
-                        { text: 'Feature Estimate', dataIndex: 'LeafStoryPlanEstimateTotal' },
-                        { text: 'Planned Start', dataIndex: 'PlannedStartDate', renderer: renderUSDate },
-                        { text: 'Planned End', dataIndex: 'PlannedEndDate', renderer: renderUSDate },
-                        { text: 'State', dataIndex: 'State',  renderer: renderFieldName },
-                        { text: 'Owner', dataIndex: 'Owner', renderer: renderFieldName },
-                        { text: 'Parent', dataIndex: 'Parent', renderer: renderFieldName }
-                    ];
                     cols = that.columns;
                     var hidden_window = Ext.create( 'Ext.window.Window', {
                         title: '',
