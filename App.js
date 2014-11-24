@@ -356,17 +356,5 @@ Ext.define('CustomApp', {
             },
             fetch: that._getFetchFields()
         });  
-    },
-    _printOld: function( element_name ) {
-        var printElement = this.down('#'+element_name);
-        var printWindow = window.open('','', 'width=400,height=200');
-        printWindow.document.write( '<html><head>');
-        printWindow.document.write('<title>Feature Print</title>');
-        printWindow.document.write('<link rel="Stylesheet" type="text/css" href="' + this._getBaseURL() + 'apps/2.0p5/rui/resources/css/rui.css" />');
-        
-        printWindow.document.write('</head><body>');
-        printWindow.document.write(printElement.el.dom.innerHTML);
-        printWindow.document.write('</body></html>');
-        printWindow.print();
     }
 });
