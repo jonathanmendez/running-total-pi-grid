@@ -42,14 +42,12 @@ Ext.define('CustomApp', {
             items: [ 
                 { xtype: 'container', margin: 5, layout: { type: 'hbox' }, items: [
 		            { xtype: 'container', margin: 5, itemId: 'print_box' } 
-                ]},
-                { xtype: 'container', margin: 5, itemId: 'date_box'}
+                ]}
         ]}
     ],
     selected_rows: 0,
     launch: function() {
         window.console && console.log( "launch" );
-        this._addDatePicker();
         this._addPrintButton();
         this._setColumns();
     	this._getPIModel();
@@ -72,24 +70,6 @@ Ext.define('CustomApp', {
           { text: 'Release', dataIndex: 'Release', renderer: renderFieldName, flex: 0.75, sortable: false },
           { text: 'Desired Release', dataIndex: 'DesiredRelease', flex: 0.75, sortable: false }
 	    ];
-    },
-    _addDatePicker: function() {
-        window.console && console.log( "_addDatePicker" );
-        this.date_picker = Ext.create( 'Rally.ui.DateField',{
-            fieldLabel: 'Show Items Planned After ',
-            labelAlign: 'top',
-            labelWidth: 125,
-            stateful: true,
-            stateId: 'rallydev-pxs-runningtotal-datepicker',
-            value: Rally.util.DateTime.add( new Date(), "month", -1 ),
-            listeners: {
-                change: function( field, newValue, oldValue, eOpts ) {
-                    this._getData();
-                },
-                scope: this
-            }
-        } );
-        this.down("#date_box").add(this.date_picker);
     },
     _addPrintButton: function() {
         window.console && console.log( "_addPrintButton" );
@@ -131,16 +111,9 @@ Ext.define('CustomApp', {
     	});
     },
     _getFilters: function() {
-        var filters = [ { property: 'ObjectID', operator: '>', value: '0' }];
-        if ( this.date_picker.getValue() ) {
-            var iso_value = Rally.util.DateTime.toIsoString( this.date_picker.getValue() );
-            filters = Ext.create('Rally.data.QueryFilter',
-                { property: 'PlannedEndDate', operator: '=', value: "null" }).or( Ext.create( 'Rally.data.QueryFilter',
-                { property: 'PlannedEndDate', operator: '>', value: iso_value }));
-            window.console && console.log( filters.toString() );
-            
-        }
-        return filters;
+        var notDoneFilter = Ext.create('Rally.data.QueryFilter',
+            { property: 'State.Name', operator: '!=', value: 'Done' });
+        return notDoneFilter;
     },
     _getFetchFields: function() {
         var fields = [];
@@ -153,8 +126,6 @@ Ext.define('CustomApp', {
     },
     _getData: function() {
     	var that = this;
-        if ( this.date_picker ) {
-	        window.console && console.log( this.date_picker.getValue() );
 	    	this.pi_store = Ext.create('Rally.data.WsapiDataStore', {
 	    		autoLoad: true,
 	    		model: that.model,
@@ -191,7 +162,6 @@ Ext.define('CustomApp', {
 	    		},
 	    		fetch: that._getFetchFields()
 	    	});    
-        }
 	},
     _addPIGrid: function() {
         window.console && console.log( "_addPIGrid" );
@@ -223,17 +193,7 @@ Ext.define('CustomApp', {
     _print: function() {
         var that = this;
         
-        var cols = [
-            { text: 'ID', dataIndex: 'FormattedID', width: 50 },
-            { text: 'Name', dataIndex: 'Name', editor: 'rallytextfield', flex: 2 },
-            { text: 'Running Total', dataIndex: 'RunningTotal' },
-            { text: 'Feature Estimate', dataIndex: 'LeafStoryPlanEstimateTotal' },
-            { text: 'Planned Start', dataIndex: 'PlannedStartDate', renderer: renderUSDate },
-            { text: 'Planned End', dataIndex: 'PlannedEndDate', renderer: renderUSDate },
-            { text: 'State', dataIndex: 'State',  renderer: renderFieldName },
-            { text: 'Owner', dataIndex: 'Owner', renderer: renderFieldName },
-            { text: 'Parent', dataIndex: 'Parent', renderer: renderFieldName }
-        ];
+        cols = that.columns;
         var hidden_window = Ext.create( 'Ext.window.Window', {
             title: '',
             width: 1048,
